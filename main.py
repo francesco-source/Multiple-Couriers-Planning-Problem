@@ -3,6 +3,7 @@ import argparse
 # from cp.src.solver import CPsolver
 from SAT.src.solver import SATsolver
 from SMT.src.solver import SMTsolver
+from MIP.mip import MIPsolver
 # from smt.src.smtlib_solver import SMTLIBsolver
 # from lp.src.solver import MIPsolver
 from utils import load_data
@@ -29,7 +30,7 @@ def main():
                         help="Directory where the output will be saved", 
                         default="./res", type= str)
 
-    parser.add_argument("-t", "--timeout", help="Timeout in seconds", default=300, type= int)
+    parser.add_argument("-t", "--timeout", help="Timeout in seconds", default=270, type= int)
 
 
     args = parser.parse_args()
@@ -77,12 +78,12 @@ def main():
     #         timeout=int(args.timeout)
     #         )
 
-    # elif args.approach == "lp":
-    #     solver = MIPsolver(
-    #         data=data,
-    #         output_dir=args.output_dir,
-    #         timeout=int(args.timeout),
-    #         model=args.model)
+    elif args.approach == "lp":
+        solver = MIPsolver(
+            data=data,
+            output_dir=args.output_dir,
+            timeout=int(args.timeout),
+            mode=args.mode)
         
     else:
         raise argparse.ArgumentError(None, "Please select a solver between cp, sat, smt lp and smtlib")

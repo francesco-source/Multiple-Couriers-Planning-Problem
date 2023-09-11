@@ -1,0 +1,1 @@
+{"HIGH": {"time": 300, "optimal": false, "obj": null, "sol": []}, "CBC": {"time": 0, "optimal": true, "obj": 226, "sol": [[7, 5], [2, 1], [8], [3, 0], [4], [6]]}, "GLPK": {"time": 21, "optimal": true, "obj": 226, "sol": [[1, 6], [7], [0], [3], [8, 5], [4, 2]]}}
