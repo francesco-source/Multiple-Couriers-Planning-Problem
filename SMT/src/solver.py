@@ -87,13 +87,13 @@ class SMTsolver:
                 if iter == 0:
                     print("UNSAT")
                     past_time = int((current_time - start_time))
-                    return past_time, False, "N/A", "N/A"
+                    return past_time, False, "N/A", []
                 satisfiable = False
 
             elif status == unknown:
                 if iter == 0:
                     print("UNKNOWN RESULT for insufficient time")
-                    return self.timeout, False, "N/A", "N/A"
+                    return self.timeout, False, "N/A", []
                 satisfiable = False
                 optimal = False
                 
@@ -106,9 +106,7 @@ class SMTsolver:
         obj = max(distances)
 
         if self.mode == 'v':
-            if past_time >= 300:
-                print(f"The computation time exceeded the limit ({self.timeout} seconds)")
-            else: print("Time from beginning of the computation:", past_time, "seconds")
+            print("Time from beginning of the computation:", past_time, "seconds")
             
             print("Solution:")
             for i in range(m):
@@ -177,7 +175,7 @@ class SMTsolver:
                 if iter == 0:
                     print("UNSAT")
                     past_time = int((current_time - start_time))
-                    return past_time, False, "N/A", "N/A"
+                    return past_time, False, "N/A", []
                 iter += 1
                 self.solver.pop()
                 self.solver.push()
@@ -186,7 +184,7 @@ class SMTsolver:
             elif status == unknown:
                 if iter == 0:
                     print("UNKNOWN RESULT for insufficient time")
-                    return self.timeout, False, "N/A", "N/A"
+                    return self.timeout, False, "N/A", []
                 elif self.mode == 'v':
                     print(f"The computation time exceeded the limit ({self.timeout} seconds)")      
                 satisfiable = False

@@ -88,13 +88,13 @@ class SATsolver:
                 if iter == 0:
                     print("UNSAT")
                     past_time = int((current_time - start_time))
-                    return past_time, False, "N/A", "N/A"
+                    return past_time, False, "N/A", []
                 satisfiable = False
 
             elif status == unknown:
                 if iter == 0:
                     print("UNKNOWN RESULT for insufficient time")
-                    return self.timeout, False, "N/A", "N/A"
+                    return self.timeout, False, "N/A", []
                 satisfiable = False
                 optimal = False
                 
@@ -190,7 +190,7 @@ class SATsolver:
                 if iter == 0:
                     print("UNSAT")
                     past_time = int((current_time - start_time))
-                    return past_time, False, "N/A", "N/A"
+                    return past_time, False, "N/A", []
                 iter += 1
                 self.solver.pop()
                 self.solver.push()
@@ -199,7 +199,7 @@ class SATsolver:
             elif status == unknown:
                 if iter == 0:
                     print("UNKNOWN RESULT for insufficient time")
-                    return self.timeout, False, "N/A", "N/A"
+                    return self.timeout, False, "N/A", []
                 elif self.mode == 'v':
                     print(f"The computation time exceeded the limit ({self.timeout} seconds)")      
                 satisfiable = False
@@ -454,4 +454,3 @@ class SATsolver:
                 self.solver.add(ohe_less(X[i][0], X[i+1][0]))
             else: # l[i] > l[i+1]
                 self.solver.add(lesseq(W_tot[i+1], W_tot[i]))
-        pass

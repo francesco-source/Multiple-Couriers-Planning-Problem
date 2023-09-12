@@ -1,6 +1,6 @@
 import argparse
 
-# from cp.src.solver import CPsolver
+from CP.src.solver import CPsolver
 from SAT.src.solver import SATsolver
 from SMT.src.solver import SMTsolver
 from MIP.mip import MIPsolver
@@ -47,15 +47,15 @@ def main():
     data = load_data(args.input_dir, args.num_instance)
     print("Loaded!")  
       
-    # if args.approach == "cp":
-    #     solver = CPsolver(
-    #         data=instance, 
-    #         output_dir=args.output_dir, 
-        #     timeout=int(args.timeout), 
-        #     model=args.model
-        # )
+    if args.approach == "cp":
+        solver = CPsolver(
+            data=data, 
+            output_dir=args.output_dir, 
+            timeout=int(args.timeout), 
+            mode=args.mode
+        )
     
-    if args.approach == "sat":
+    elif args.approach == "sat":
         solver = SATsolver(
             data=data, 
             output_dir=args.output_dir,
