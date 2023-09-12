@@ -33,7 +33,7 @@ class SATsolver:
                     
                     time, optimal, obj, sol = self.optimize(instance, strategy, variables)
                     
-                    print(f"Max distance found using {stratstr} search{('' if sym == NO_SYMMETRY_BREAKING else ' w sb')}: {obj}")
+                    print(f"Max distance found using {stratstr} search{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '}: {obj}")
                     
                     key_dict = stratstr + symstr
                     json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
@@ -95,11 +95,13 @@ class SATsolver:
                 if iter == 0:
                     print("UNKNOWN RESULT for insufficient time")
                     return self.timeout, False, "N/A", []
+                elif self.mode == 'v':
+                    print(f"The computation time exceeded the limit ({self.timeout} seconds)")
                 satisfiable = False
                 optimal = False
                 
         current_time = t.time()
-        past_time = int((current_time - start_time))
+        past_time = current_time - start_time
 
         model = previousModel            
         x = [[[ model.evaluate(X[i][j][k]) for k in range(0,n+1) ] for j in range(n) ] for i in range(m)]
@@ -115,9 +117,7 @@ class SATsolver:
             tot_s.append(sol)
 
         if self.mode == 'v':
-            if past_time >= 300:
-                print(f"The computation time exceeded the limit ({self.timeout} seconds)")
-            else: print("Time from beginning of the computation:", past_time, "seconds")
+            print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             
             print("Solution:")
             for i in range(m):
@@ -132,7 +132,7 @@ class SATsolver:
         distances = [toInteger(np.array(xDD[i])) for i in range(m)]
         obj = max(distances)
 
-        return past_time, optimal, obj, tot_s
+        return int(past_time), optimal, obj, tot_s
         
     def binary_search(self, instance, variables):
         rho, X, D_tot, _ = variables
@@ -207,7 +207,7 @@ class SATsolver:
             
         
         current_time = t.time()
-        past_time = int(current_time - start_time)
+        past_time = current_time - start_time
 
         model = previousModel
         x = [[[ model.evaluate(X[i][j][k]) for k in range(0,n+1) ] for j in range(n) ] for i in range(m)]
@@ -224,7 +224,7 @@ class SATsolver:
             tot_s.append(sol)
 
         if self.mode == 'v':
-            print("Time from beginning of the computation: ", past_time)
+            print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             print("Solution:")
             for i in range(m):
                 print(f"Courier {i+1}:","deposit => ", end = "")
@@ -238,7 +238,7 @@ class SATsolver:
         distances = [toInteger(np.array(xDist[i])) for i in range(m)]
         obj = max(distances)
 
-        return past_time, optimal, obj, tot_s
+        return int(past_time), optimal, obj, tot_s
     
     
     def set_constraints(self, instance, strategy):
@@ -447,7 +447,6 @@ class SATsolver:
         m, n, s, l, D = instance.unpack()
         _, X, _, W_tot = variables
         # lexicographic ordering between the paths of two couriers with same load capacity
-        
         # se un corriere ha più capacity lo forziamo a depositare più carico
         for i in range(m - 1):
             if l[i] == l[i+1]:

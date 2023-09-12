@@ -64,7 +64,7 @@ class CPsolver:
                                 'sol': sol
                                 }
                             
-                            self.print_solution(sol, distances)
+                            self.print_solution(sol, distances, time)
 
                             key_dict = solver_name + symstr
                             json_dict[key_dict] = output_dict
@@ -80,7 +80,8 @@ class CPsolver:
                                     'obj': "N/A",
                                     'sol': []
                             }
-                    
+                    if self.mode == 'v':
+                        print()
                 if self.mode == 'v':
                     print()
             print()
@@ -106,8 +107,10 @@ class CPsolver:
         return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                   processes=10, random_seed=42, free_search=True)
     
-    def print_solution(self, sol, distances):
+    def print_solution(self, sol, distances, time= None):
         if self.mode == 'v':
+            if time:
+                print("Time from beginning of the computation:", np.round(time, 2), "seconds")
             print("Solution:")
             for i, courier_path in enumerate(sol):
                 print(f"Courier {i+1}:","deposit => ", end = "")
@@ -117,4 +120,3 @@ class CPsolver:
             print("Distance travelled:")
             for i, dist in enumerate(distances):
                 print(f"Courier {i+1}: ", dist)
-            print()

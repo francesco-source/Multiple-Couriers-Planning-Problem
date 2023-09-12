@@ -28,11 +28,11 @@ class SMTsolver:
                     variables = self.set_constraints(instance, strategy)
                     
                     if sym == SYMMETRY_BREAKING:
-                        self.add_sb_constraints(instance)
+                        self.add_sb_constraints(instance, variables)
                     
                     time, optimal, obj, sol = self.optimize(instance, strategy, variables)
                     
-                    print(f"Max distance found using {stratstr} search {('' if sym == NO_SYMMETRY_BREAKING else 'w sb')}: {obj}")
+                    print(f"Max distance found using {stratstr} search{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '}{obj}")
                     
                     key_dict = stratstr + symstr
                     json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
@@ -55,7 +55,7 @@ class SMTsolver:
         return time, optimal, obj, sol
     
     def linear_search(self, instance, variables):
-        rho, x, m_dist = variables
+        rho, x, m_dist, _ = variables
         m,n,_,_,_ = instance.unpack()        
         
         start_time = t.time()        
@@ -98,7 +98,7 @@ class SMTsolver:
                 optimal = False
                 
         current_time = t.time()
-        past_time = int((current_time - start_time))
+        past_time = current_time - start_time
 
         model = previousModel
         sol = [[int(str(model.evaluate(x[k][j]))) for j in range(n + 1) if int(str(model.evaluate(x[k][j]))) != n+1] for k in range(m)]
@@ -106,7 +106,7 @@ class SMTsolver:
         obj = max(distances)
 
         if self.mode == 'v':
-            print("Time from beginning of the computation:", past_time, "seconds")
+            print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             
             print("Solution:")
             for i in range(m):
@@ -118,10 +118,10 @@ class SMTsolver:
             for i in range(m):
                 print(f"Courier {i+1}: ", distances[i])
 
-        return past_time, optimal, obj, sol
+        return int(past_time), optimal, obj, sol
     
     def binary_search(self, instance, variables):
-        rho, x, m_dist = variables
+        rho, x, m_dist, _ = variables
         m,n,_,_,D = instance.unpack()        
         
         maxDist = n * np.max(D)
@@ -191,7 +191,7 @@ class SMTsolver:
                 optimal = False
             
         current_time = t.time()
-        past_time = int((current_time - start_time))
+        past_time = current_time - start_time
 
         model = previousModel
         sol = [[int(str(model.evaluate(x[k][j]))) for j in range(n + 1) if int(str(model.evaluate(x[k][j]))) != n+1] for k in range(m)]
@@ -199,7 +199,7 @@ class SMTsolver:
         obj = max(distances)
 
         if self.mode == 'v':
-            print("Time from beginning of the computation:", past_time, "seconds")
+            print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             
             print("Solution:")
             for i in range(m):
@@ -211,7 +211,7 @@ class SMTsolver:
             for i in range(m):
                 print(f"Courier {i+1}: ", distances[i])
                 
-        return past_time, optimal, obj, sol
+        return int(past_time), optimal, obj, sol
                 
     
     def set_constraints(self, instance, strategy):
@@ -291,7 +291,7 @@ class SMTsolver:
         for k in range(m):
             self.solver.add(rho >= m_dist[k])
             
-        return rho, x, m_dist
+        return rho, x, m_dist, couriers_loads
     
     def add_bin_constr(self, instance):
         m, n, s, l, D = instance.unpack()
@@ -370,4 +370,15 @@ class SMTsolver:
 
         self.solver.push()
 
-        return rho, x, m_dist
+        return rho, x, m_dist, couriers_loads
+    
+    def add_sb_constraints(self, instance, variables):
+        m, n, s, l, D = instance.unpack()
+        _, x, _, couriers_loads = variables
+        # lexicographic ordering between the paths of two couriers with same load capacity
+        # we force a counier with the more capacity to carry the more weight
+        for i in range(m-1):
+            if l[i] == l[i+1]:
+                self.solver.add(x[i][0] <= x[i+1][0])
+            else: # l[i] > l[i+1]
+                self.solver.add(couriers_loads[i+1] <= couriers_loads[i])
