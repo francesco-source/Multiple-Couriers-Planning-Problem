@@ -51,6 +51,13 @@ def lesseq(a, b):
     constraints.append(Implies(And([a[k] == b[k] for k in range(i)]), Or(Not(a[i]),b[i])))
   return And(constraints)
 
+def ohe_less(a, b):
+  """a and b are onehotencodings of two numbers. 
+  The constraint is true if a is less than b """
+  n = len(a)
+  return Or([And(a[k], Or([b[j] for j in range(k+1, n)])) for k in range(n-1)])
+  
+
 def equals(a, b):
   return And([a[i] == b[i] for i in range(len(a))])
 

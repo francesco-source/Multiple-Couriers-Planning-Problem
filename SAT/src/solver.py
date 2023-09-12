@@ -29,11 +29,11 @@ class SATsolver:
                     variables = self.set_constraints(instance, strategy)
                     
                     if sym == SYMMETRY_BREAKING:
-                        self.add_sb_constraints(instance)
+                        self.add_sb_constraints(instance, variables)
                     
                     time, optimal, obj, sol = self.optimize(instance, strategy, variables)
                     
-                    print(f"Max distance found using {stratstr} search {('' if sym == NO_SYMMETRY_BREAKING else 'w sb')}: {obj}")
+                    print(f"Max distance found using {stratstr} search{('' if sym == NO_SYMMETRY_BREAKING else ' w sb')}: {obj}")
                     
                     key_dict = stratstr + symstr
                     json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
@@ -55,7 +55,7 @@ class SATsolver:
         return time, optimal, obj, sol
     
     def linear_search(self, instance, variables):
-        rho, X, D_tot = variables
+        rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()
         maxDistBin= int(np.ceil(np.log2(n * np.max(D))))
         
@@ -135,7 +135,7 @@ class SATsolver:
         return past_time, optimal, obj, tot_s
         
     def binary_search(self, instance, variables):
-        rho, X, D_tot = variables
+        rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()
         maxDistBin= int(np.ceil(np.log2(n * np.max(D))))
         maxDist = n * np.max(D)
@@ -346,7 +346,7 @@ class SATsolver:
             for j in range(n):
                 self.solver.add(Implies(X[i][j][0], X[i+1][j][0]))
 
-        return rho, X, D_tot
+        return rho, X, D_tot, W_tot
         
     def add_bin_constr(self, instance):
         m, n, s, l, D = instance.unpack()
@@ -441,7 +441,17 @@ class SATsolver:
 
         self.solver.push()
         
-        return rho, X, D_tot
+        return rho, X, D_tot, W_tot
 
-    def add_sb_constraints(self, instance):
+    def add_sb_constraints(self, instance, variables):
+        m, n, s, l, D = instance.unpack()
+        _, X, _, W_tot = variables
+        # lexicographic ordering between the paths of two couriers with same load capacity
+        
+        # se un corriere ha più capacity lo forziamo a depositare più carico
+        for i in range(m - 1):
+            if l[i] == l[i+1]:
+                self.solver.add(ohe_less(X[i][0], X[i+1][0]))
+            else: # l[i] > l[i+1]
+                self.solver.add(lesseq(W_tot[i+1], W_tot[i]))
         pass
