@@ -63,21 +63,21 @@ class Instance:
         # np.array(inst.l)[corr_inverse] to invert the sorting of l
       
       
-    def post_process_instance(self,  distances = [],package_vec_res = [[]]):
+    def post_process_instance(self,  distances = [], solution = [[]]):
 
-        true_order_distaces = distances
-        true_order_packages = package_vec_res
+        true_order_distaces = list(distances)
+        true_order_solution = list(solution)
         for _, list_v in self.courier_sort_dict.items():
-              true_order_packages[list_v[1]] = package_vec_res[int(list_v[0])]
+              true_order_solution[list_v[1]] = solution[list_v[0]]
               true_order_distaces[list_v[1]] = distances[list_v[0]]
  
-        return true_order_distaces, true_order_packages
+        return true_order_distaces, true_order_solution
 
 
     def unpack(self):
       return self.m, self.n, self.s, self.l, self.D
         
-def load_instance(path: str, num: int):
+def load_instance(path: str, num: int, preprocessing: bool = True):
   if num < 10:
     num = "0"+str(num)
   else:
@@ -94,7 +94,8 @@ def load_instance(path: str, num: int):
       D.append([int(x) for x in file.readline().split(" ") if x!= "\n" if x!= ""])
   
   instance = Instance(m, n, l, s, D)
-  instance.preprocess_instance()
+  if preprocessing:
+    instance.preprocess_instance()
   return instance
 
 def load_data(path: str, num):
