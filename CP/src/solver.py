@@ -12,6 +12,7 @@ class CPsolver:
         self.mode = mode
         self.solver_path = "./CP/src/"
 
+
     def solve(self):
         path = self.output_dir + "/CP/"
         for num, mcp_instance in self.data.items():

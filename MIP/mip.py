@@ -150,6 +150,7 @@ class MIPsolver:
 
             print(e)
 
+
             return time, False, None , []
    
     def model1(self,instance):

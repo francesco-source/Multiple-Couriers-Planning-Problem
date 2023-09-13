@@ -376,6 +376,7 @@ class SMTsolver:
 
         return rho, x, m_dist, couriers_loads
     
+    
     def add_sb_constraints(self, instance, variables):
         m, n, s, l, D = instance.unpack()
         _, x, _, couriers_loads = variables

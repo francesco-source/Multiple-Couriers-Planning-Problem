@@ -137,6 +137,7 @@ class SATsolver:
 
         return int(past_time), optimal, obj, tot_s
         
+        
     def binary_search(self, instance, variables):
         rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()

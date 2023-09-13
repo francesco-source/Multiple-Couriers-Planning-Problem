@@ -62,6 +62,7 @@ class Instance:
         #self.l = sorted(self.l, reverse= True)
         # np.array(inst.l)[corr_inverse] to invert the sorting of l
       
+      
     def post_process_instance(self,  distances = [],package_vec_res = [[]]):
 
         true_order_distaces = distances
