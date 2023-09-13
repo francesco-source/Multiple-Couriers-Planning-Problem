@@ -18,14 +18,14 @@ class CPsolver:
         for num, mcp_instance in self.data.items():
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
-            for solver_name in SOLVERS_CP:
+            for solver_const,solver_name in SOLVERS_CP.items():
                 self.solver = mzn.Solver.lookup(solver_name)
                 for sym, symstr in SYM_DICT.items():
                     model = mzn.Model(self.solver_path + "model" + symstr + ".mzn")
 
                     try:
                         mzn_instance = mzn.Instance(self.solver, model)
-                        result = self.search(mcp_instance, mzn_instance)
+                        result = self.search(mcp_instance, mzn_instance,solver_const)
                         
                         if result.status is mzn.Status.UNSATISFIABLE:
                             output_dict = {
@@ -93,7 +93,7 @@ class CPsolver:
             save_file(path, num + ".json", json_dict)
 
 
-    def search(self, mcp_instance, mzn_instance):
+    def search(self, mcp_instance, mzn_instance,solver_const):
         m, n, s, l, D = mcp_instance.unpack()
 
         mzn_instance["courier"] = m
@@ -108,8 +108,19 @@ class CPsolver:
         mzn_instance["d_low_bound"] = mcp_instance.courier_dist_lb
         mzn_instance["ratio_packages"] = mcp_instance.ratio_courier_loads
         
-        return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
-                                  processes=10, random_seed=42, free_search=True)
+        if solver_const == CHUFFED:
+            return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
+                                   random_seed=42, free_search=True)
+        elif solver_const == GECODE:
+            return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
+                                  processes = 10, random_seed=42, free_search=True)
+        elif solver_const == HIGHS:
+            return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
+                                  processes = 10, random_seed=42)
+        elif solver_const == LCG:
+                return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
+                                  )
+            
     
     def print_solution(self, sol, distances, time= None):
         if self.mode == 'v':
