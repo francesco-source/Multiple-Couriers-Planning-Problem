@@ -104,7 +104,9 @@ class SMTsolver:
         sol = [[int(str(model.evaluate(x[k][j]))) for j in range(n + 1) if int(str(model.evaluate(x[k][j]))) != n+1] for k in range(m)]
         distances = [int(str(model.evaluate(m_dist[i]))) for i in range(m)]
         obj = max(distances)
-
+        
+        distances,sol = instance.post_process_instance(distances,sol)
+        
         if self.mode == 'v':
             print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             
@@ -197,6 +199,8 @@ class SMTsolver:
         sol = [[int(str(model.evaluate(x[k][j]))) for j in range(n + 1) if int(str(model.evaluate(x[k][j]))) != n+1] for k in range(m)]
         distances = [int(str(model.evaluate(m_dist[i]))) for i in range(m)]
         obj = max(distances)
+        
+        distances, sol = instance.post_process_instance(distances,sol)
 
         if self.mode == 'v':
             print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")

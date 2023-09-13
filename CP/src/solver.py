@@ -55,6 +55,9 @@ class CPsolver:
                                 time = self.timeout
 
                             sol = [[x for x in sublist if x != mcp_instance.n+1] for sublist in assignments]
+                            
+                            distances,sol = mcp_instance.post_process_instance(distances,sol)
+                            
                             # postprocessing: sia sol sia distances vanno riordinate
 
                             output_dict = {

@@ -47,12 +47,11 @@ class Instance:
       sorting_dict = {}
 
       for index, element in enumerate(self.l):
-            if element not in sorting_dict:
-                sorting_dict[element] = []
-            sorting_dict[element].append([index, sorted_list.index(element)])
+            sorting_dict[element] = [index, sorted_list.index(element)]
 
       return sorted_list, sorting_dict
     
+
 
     def preprocess_instance(self):
         self.correspondences = np.argsort(self.l)[::-1]
@@ -60,25 +59,18 @@ class Instance:
         self.corr_inverse = np.fromiter((x for _, x in transformation_function), dtype= int)
 
         self.l, self.courier_sort_dict = self.sort_l()
-        
         #self.l = sorted(self.l, reverse= True)
         # np.array(inst.l)[corr_inverse] to invert the sorting of l
       
-    def post_process_instance(self, package_vec_res):
-        # Given the instance and the result of each package carried by each courier,
-        # sort the packages using the courier_sort_dictionary.
+    def post_process_instance(self,  distances = [],package_vec_res = [[]]):
 
-        # Create a temporary list with pairs (dictionary value, original list index).
-        temp = [(self.courier_sort_dict[val][0], val, self.courier_sort_dict[val][1])
-                 for val in self.courier_sort_dict]
-
-        # Sort the temporary list based on dictionary values.
-        temp.sort()
-        # Build the result list 'package_ordered' by rearranging elements of 'package_vec_res'
-        # based on the indices obtained from the temporary list.
-        package_ordered = [package_vec_res[index] for _, _, index in temp]
-
-        return package_ordered
+        true_order_distaces = distances
+        true_order_packages = package_vec_res
+        for _, list_v in self.courier_sort_dict.items():
+              true_order_packages[list_v[1]] = package_vec_res[int(list_v[0])]
+              true_order_distaces[list_v[1]] = distances[list_v[0]]
+ 
+        return true_order_distaces, true_order_packages
 
 
     def unpack(self):

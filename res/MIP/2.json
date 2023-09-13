@@ -1,1 +1,1 @@
-{"HIGH": {"time": 300, "optimal": false, "obj": null, "sol": []}, "CBC": {"time": 0, "optimal": true, "obj": 226, "sol": [[7, 5], [2, 1], [8], [3, 0], [4], [6]]}, "GLPK": {"time": 21, "optimal": true, "obj": 226, "sol": [[1, 6], [7], [0], [3], [8, 5], [4, 2]]}}
+{"CBC": {"time": 0, "optimal": true, "obj": 226, "sol": [[4], [7, 5], [8], [7, 5], [4], [6]]}, "GLPK": {"time": 57, "optimal": true, "obj": 226, "sol": [[8, 5], [1, 6], [0], [1, 6], [8, 5], [4, 2]]}}

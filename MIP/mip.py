@@ -17,8 +17,6 @@ class MIPsolver:
         self.solver = None
         self.mode = mode
 
-        
-
 
     def set_solver(self,name = f"solve_instance",sense = LpMinimize):
         self.solver = LpProblem(name = name, sense = sense)
@@ -63,8 +61,8 @@ class MIPsolver:
             solver = PULP_CBC_CMD(timeLimit=self.timeout, msg=1)
         elif strategy == GLPK:
             solver = GLPK_CMD(timeLimit=self.timeout, msg=1)
-        elif strategy == HIGH:
-            solver = HiGHS_CMD(timeLimit=self.timeout,msg=1)
+        # elif strategy == HIGH:
+        #     solver = HiGHS_CMD(timeLimit=self.timeout,msg=1)
 
         solver.msg = False
         self.solver.solutionTime = self.timeout
@@ -113,7 +111,8 @@ class MIPsolver:
             for i in range(n+1):
                 if i not in element_present:
                     raise ElementNotFoundException(
-                        "The model wasn't able to encode properly and solve the problem in the time window.")
+                        "The model wasn't able to encode properly",
+                        "and solve the problem in the time window.")
 
             if self.mode == 'v':
 
@@ -139,7 +138,12 @@ class MIPsolver:
             if strategy == HIGH:
                 print("Max distance found using HIGH solver", obj)
             
-            result = [[x for x in sublist if x != n] for sublist in sol]
+            
+            
+            dist_cour_mat, result = instance.post_process_instance(dist_cour_mat,sol)
+            
+            result = [[x for x in sublist if x != n] for sublist in result]
+            
             return time , optimal, obj, result
         
         except ElementNotFoundException as e:
@@ -147,18 +151,7 @@ class MIPsolver:
             print(e)
 
             return time, False, None , []
-        
-        except:
-
-            print("Solver exceeded time limit, no solution was found.")
-
-            return 300, False, None, []
-        
    
-
-
-        
-    
     def model1(self,instance):
 
         m,n,s,l,D = instance.unpack()  

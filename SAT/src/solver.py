@@ -106,7 +106,10 @@ class SATsolver:
         model = previousModel            
         x = [[[ model.evaluate(X[i][j][k]) for k in range(0,n+1) ] for j in range(n) ] for i in range(m)]
         xDD = [[model.evaluate(D_tot[i][b]) for b in range(maxDistBin)] for i in range(m)]
-
+        
+        distances = [toInteger(np.array(xDD[i])) for i in range(m)]
+        obj = max(distances)
+        
         tot_s = []
         for i in range(m):
             sol = []
@@ -116,6 +119,8 @@ class SATsolver:
                         sol.append(k)
             tot_s.append(sol)
 
+        distances,tot_s = instance.post_process_instance(distances,tot_s)
+        
         if self.mode == 'v':
             print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             
@@ -128,9 +133,7 @@ class SATsolver:
             print("Distance travelled:")
             for i in range(m):
                 print(f"Courier {i+1}: ", toInteger(np.array(xDD[i])))
-
-        distances = [toInteger(np.array(xDD[i])) for i in range(m)]
-        obj = max(distances)
+        
 
         return int(past_time), optimal, obj, tot_s
         
@@ -212,7 +215,8 @@ class SATsolver:
         model = previousModel
         x = [[[ model.evaluate(X[i][j][k]) for k in range(0,n+1) ] for j in range(n) ] for i in range(m)]
         xDist = [[model.evaluate(D_tot[i][b]) for b in range(maxDistBin)] for i in range(m)]
-
+        distances = [toInteger(np.array(xDist[i])) for i in range(m)]
+        obj = max(distances)
         # output  
         tot_s = []
         for i in range(m):
@@ -223,6 +227,8 @@ class SATsolver:
                         sol.append(k)
             tot_s.append(sol)
 
+        distances,tot_s = instance.post_process_instance(distances,tot_s)
+        
         if self.mode == 'v':
             print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
             print("Solution:")
@@ -235,8 +241,9 @@ class SATsolver:
             for i in range(m):
                 print(f"Courier {i+1}: ", toInteger(np.array(xDist[i])))
 
-        distances = [toInteger(np.array(xDist[i])) for i in range(m)]
-        obj = max(distances)
+        
+        
+        
 
         return int(past_time), optimal, obj, tot_s
     
