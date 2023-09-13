@@ -1,1 +1,1 @@
-{"CBC": {"time": 1, "optimal": true, "obj": 14, "sol": [[0, 2, 3], [1, 4, 5]]}, "GLPK": {"time": 0, "optimal": true, "obj": 14, "sol": [[3, 2, 0], [1, 4, 5]]}}
+{"CBC": {"time": 2, "optimal": true, "obj": 14, "sol": [[0, 2, 3], [1, 4, 5]]}, "GLPK": {"time": 0, "optimal": true, "obj": 14, "sol": [[3, 2, 0], [1, 4, 5]]}}

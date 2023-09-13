@@ -110,7 +110,7 @@ class CPsolver:
         
         if solver_const == CHUFFED:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
-                                   random_seed=42, free_search=True)
+                                   random_seed=42)
         elif solver_const == GECODE:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                   processes = 10, random_seed=42, free_search=True)
@@ -119,7 +119,7 @@ class CPsolver:
                                   processes = 10, random_seed=42)
         elif solver_const == LCG:
                 return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
-                                  )
+                                  random_seed=42)
             
     
     def print_solution(self, sol, distances, time= None):
