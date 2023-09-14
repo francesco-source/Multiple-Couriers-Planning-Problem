@@ -34,13 +34,13 @@ class SMTLIBsolver(SMTsolver):
         for now the file smtlib are set for the best model (model zero)
         """
         
-        vars = self.set_constraints(instance=instance,strategy = strategy)
+        self.set_constraints(instance=instance, strategy = strategy)
         
        
-    def create_file(self,instance,strategy = "binary"):
+    def create_file(self, instance, strategy = "binary"):
         # smtlib instruction to suppress warning for using different solvers
         self.set_optimizer() # setting the Solver to create the model
-        self.set_model(instance) # setting of the model used
+        self.set_model(instance, strategy) # setting of the model used
         to_write = "(set-logic ALL)\n" 
         to_write += self.optimizer.sexpr()
         with open(self.file, "w") as f:
@@ -48,18 +48,33 @@ class SMTLIBsolver(SMTsolver):
      
      
     def set_command(self,instance, bash_file,solver):
-        couriers, num_items,item_size, courier_size, distances = instance.unpack()
+        couriers, num_items, item_size, courier_size, distances = instance.unpack()
         courier_dist_ub = instance.courier_dist_ub
         rho_low_bound = instance.rho_low_bound
         courier_dist_lb = instance.courier_dist_lb
         # execution of the bash file
         path = os.path.join(os.getcwd(),bash_file) # path to execute the bash file
         
-        command = f"timeout {self.timeout} bash {path} '{self.file}' 'max' '{upper_bound}' '{lower_bound -1}' '{solver}' '{couriers}' '{num_items + 1}'"
+        command = f"timeout {self.timeout} bash {path} '{self.file}' 'max' '{courier_dist_ub}' '{rho_low_bound-1}' '{solver}' '{couriers}' '{num_items + 1}'"
         return command
     
     
-    
-    
+    def solve(self):
+        self.output_dir + "/SMTlib/"
+        strategy = "binary"
+        for num, instance in self.data.items():
+            json_dict = {}
+            filename = str(num) + ".json"
+            for solver, solverstr in SOLVERS_SMTlib.items():
+                print("File = ", num)
+                print("Solver used = ", solverstr)
+                print("Type search = ", strategy)
+                for sym, symstr in SYM_DICT.items():
+                    bash_file = "SMT/src/" + strategy + ".sh"
+                    self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2"
+                    
+                k   key_dict = solverstr + symstr
+                    json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
+                    
         
 
