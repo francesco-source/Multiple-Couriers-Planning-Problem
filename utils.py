@@ -42,14 +42,17 @@ class Instance:
       return min_l, max_l
     
         
-    def sort_l(self):
-      sorted_list = sorted(self.l,reverse = True)
-      sorting_dict = {}
-
-      for index, element in enumerate(self.l):
-            sorting_dict[element] = [index, sorted_list.index(element)]
-
-      return sorted_list, sorting_dict
+    def sort_l(self, reverse=False):
+        arr = np.array(self.l)
+        if reverse:
+            sorted_indices = np.argsort(-arr)  # Use negative values for reverse sorting
+        else:
+            sorted_indices = np.argsort(arr)
+        sorted_list = arr[sorted_indices]
+        ordered_dict = {}
+        for i in range(len(arr)):
+            ordered_dict[i] = sorted_indices[i]
+        return list(sorted_list), ordered_dict
     
 
 
@@ -58,18 +61,18 @@ class Instance:
         transformation_function = sorted(zip(self.correspondences, np.arange(self.m)))
         self.corr_inverse = np.fromiter((x for _, x in transformation_function), dtype= int)
 
-        self.l, self.courier_sort_dict = self.sort_l()
+        self.l, self.courier_sort_dict = self.sort_l(reverse=True)
         #self.l = sorted(self.l, reverse= True)
         # np.array(inst.l)[corr_inverse] to invert the sorting of l
       
       
     def post_process_instance(self,  distances = [], solution = [[]]):
-
+    
         true_order_distaces = list(distances)
         true_order_solution = list(solution)
-        for _, list_v in self.courier_sort_dict.items():
-              true_order_solution[list_v[1]] = solution[list_v[0]]
-              true_order_distaces[list_v[1]] = distances[list_v[0]]
+        for start, end in self.courier_sort_dict.items():
+              true_order_solution[end] = solution[start]
+              true_order_distaces[end] = distances[start]
  
         return true_order_distaces, true_order_solution
 

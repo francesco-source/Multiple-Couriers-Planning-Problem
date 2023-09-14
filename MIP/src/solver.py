@@ -3,7 +3,7 @@ import numpy as np
 from utils import *
 import time
 import signal
-from MIP.mpi_utils import *
+from MIP.src.mpi_utils import *
 from constants import *
 from datetime import datetime
 
@@ -28,27 +28,39 @@ class MIPsolver:
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
             for strategy, stratstr in STRATEGIES_MIP_DICT.items():
-                
-                self.set_solver()
-                variables = self.model1(instance)
+                for sym , symstr in SYM_DICT.items():
+                    self.set_solver()
+                    
+                    variables = self.model1(instance)
+                    
+                    if sym == SYMMETRY_BREAKING:
+                        self.add_sb_constraint(instance,variables)
+                        
 
-                time, optimal, obj,res = self.optimize(instance,strategy,variables)
+                    time, optimal, obj,res = self.optimize(instance,strategy,variables)
+                    
+                    self.print_obj_dist(obj,sym,stratstr)
 
-                # create the optimize function in order to  obtain everything you whan
-                key_dict =  stratstr
-                json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": res}
-                if self.mode == 'v':
-                    print()
+                    # create the optimize function in order to  obtain everything you whan
+                    key_dict =  stratstr
+                    json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": res}
+                    if self.mode == 'v':
+                        print()
                 if self.mode == 'v':
                     print()
             print()          
 
         save_file(path, num + ".json", json_dict)
 
+    def print_obj_dist(self,obj,sym,strastr):
+        
+            print(f"Max distance found using {strastr} solver,{' without sb :' if sym==NO_SYMMETRY_BREAKING else ''} {obj}")
 
+    
     def optimize(self,instance,strategy,variables):
              
              return self.search(instance,variables,strategy)
+         
 
     
     def search(self,instance,variables,strategy):
@@ -126,23 +138,17 @@ class MIPsolver:
                         if sol[k][j] == n:
                             print("deposit", " => ",end="")
                         else:
-                            print(sol[k][j], " => ",end = "")
+                            print(sol[k][j]+1, " => ",end = "")
                     print("deposit")
                 print("Distance travelled:")
                 for k in range(m):
                     print("Courier",k+1,": ",int(dist_cour_mat[k]))
-            if strategy == CBC:
-                print("Max distance found using CBC solver", obj)
-            if strategy == GLPK:
-                print("Max distance found using GLPK solver", obj)
-            if strategy == HIGH:
-                print("Max distance found using HIGH solver", obj)
-            
-            
             
             dist_cour_mat, result = instance.post_process_instance(dist_cour_mat,sol)
             
-            result = [[x for x in sublist if x != n] for sublist in result]
+            result = [[x + 1 for x in sublist if x != n] for sublist in result]
+            
+            
             
             return time , optimal, obj, result
         
@@ -221,6 +227,8 @@ class MIPsolver:
 
         return rho,X,dist_courier
 
+    def add_sb_constraint(self,instance,variables):
+        pass
 
     def add_constraint_2(self,instance):
         m,n,s,l,D = instance.unpack()  
