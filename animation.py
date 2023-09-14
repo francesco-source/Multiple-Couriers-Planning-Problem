@@ -63,7 +63,7 @@ def main():
     for solver, solver_result in inst_result.items():
         solution = solver_result["sol"]
 
-        mds = MDS(n_components=2, dissimilarity='precomputed', normalized_stress= "auto", random_state=42)
+        mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
         coordinates = mds.fit_transform(sym_matrix)
 
         # The last point is the deposit. This is meant to be the origin of the frame of reference

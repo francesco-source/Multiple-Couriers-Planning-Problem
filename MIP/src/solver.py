@@ -65,7 +65,7 @@ class MIPsolver:
     
     def search(self,instance,variables,strategy):
 
-        rho, X, dist_courier = variables
+        rho, X,Y, dist_courier = variables
 
         m,n, _,_, D = instance.unpack()
 
@@ -225,10 +225,27 @@ class MIPsolver:
 
         self.solver += rho
 
-        return rho,X,dist_courier
+        return rho,X,Y,dist_courier
 
     def add_sb_constraint(self,instance,variables):
-        pass
+        
+        rho , X,Y, dist_courier = variables
+        
+        m, n , _,_, _ = instance.unpack()
+        
+        # li ha fatti chat gpt non penso abbiano senso. Nessun senso
+        for k in range(m):
+            for i in range(n):
+                for j in range(i + 1, n ):
+                     self.solver += Y[k][i] + (n - 1) * X[i][j][k] <= Y[k][j]
+
+        for k in range(m):
+            for i in range(n):
+                for j in range(i + 1, n):
+                    self.solver += Y[k][i] <= Y[k][j]
+
+            
+
 
     def add_constraint_2(self,instance):
         m,n,s,l,D = instance.unpack()  
