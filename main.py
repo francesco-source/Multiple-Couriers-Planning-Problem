@@ -4,7 +4,7 @@ from CP.src.solver import CPsolver
 from SAT.src.solver import SATsolver
 from SMT.src.solver import SMTsolver
 from MIP.src.solver import MIPsolver
-# from smt.src.smtlib_solver import SMTLIBsolver
+from SMT.src.SMTlib_solver import SMTLIBsolver
 # from lp.src.solver import MIPsolver
 from utils import load_data
 
@@ -71,12 +71,13 @@ def main():
             mode=args.mode
         )
     
-    # elif args.approach == "smtlib":
-    #     solver = SMTLIBsolver(
-    #         data=data,
-    #         output_dir=args.output_dir,
-    #         timeout=int(args.timeout)
-    #         )
+    elif args.approach == "smtlib":
+         solver = SMTLIBsolver(
+             data=data,
+             output_dir=args.output_dir,
+            timeout=int(args.timeout),
+            mode = args.mode 
+            )
 
     elif args.approach == "lp":
         solver = MIPsolver(
