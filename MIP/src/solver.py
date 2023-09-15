@@ -3,7 +3,7 @@ import numpy as np
 from utils import *
 import time
 import signal
-from MIP.src.mpi_utils import *
+from MIP.src.mip_utils import *
 from constants import *
 from datetime import datetime
 

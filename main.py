@@ -5,7 +5,6 @@ from SAT.src.solver import SATsolver
 from SMT.src.solver import SMTsolver
 from MIP.src.solver import MIPsolver
 from SMT.src.SMTlib_solver import SMTLIBsolver
-# from lp.src.solver import MIPsolver
 from utils import load_data
 
 

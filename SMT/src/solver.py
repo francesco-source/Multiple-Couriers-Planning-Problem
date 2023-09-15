@@ -374,7 +374,6 @@ class SMTsolver:
         self.solver.add(rho == max)
 
         self.solver.push()
-
         return rho, x, m_dist, couriers_loads
     
     
@@ -382,7 +381,7 @@ class SMTsolver:
         m, n, s, l, D = instance.unpack()
         _, x, _, couriers_loads = variables
         # lexicographic ordering between the paths of two couriers with same load capacity
-        # we force a counier with the more capacity to carry the more weight
+        # we force a courier with the more capacity to carry the more weight
         for i in range(m-1):
             if l[i] == l[i+1]:
                 self.solver.add(x[i][0] <= x[i+1][0])
