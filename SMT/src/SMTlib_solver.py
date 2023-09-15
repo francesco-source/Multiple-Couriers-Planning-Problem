@@ -73,8 +73,16 @@ class SMTLIBsolver(SMTsolver):
                     bash_file = "SMT/src/" + strategy + ".sh"
                     self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2"
                     
-                k   key_dict = solverstr + symstr
-                    json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
+                    self.create_file(instance)
+                    
+                    command = self.set_command(instance,bash_file,solverstr)
+                    
+                    if num == 1:
+                        print(command)# usciranno 20 camndi uno per istanza
+                        
+                    print("Starting Execution")
+                    key_dict = solverstr + symstr
+                    #json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
                     
         
 

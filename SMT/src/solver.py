@@ -225,7 +225,8 @@ class SMTsolver:
             vars = self.add_lin_constr(instance)
         elif strategy == BINARY_SEARCH:
             vars = self.add_bin_constr(instance)
-            
+        else:
+            vars = self.add_bin_constr(instance)
         if self.mode == 'v':
             print("Time needed to encode the instance:", np.round(t.time() - start_time, 2), "seconds")
         return vars
