@@ -6,6 +6,7 @@ import signal
 from MIP.src.mip_utils import *
 from constants import *
 from datetime import datetime
+import copy
 
 class MIPsolver:
 
@@ -63,7 +64,7 @@ class MIPsolver:
          
 
     
-    def search(self,instance,variables,strategy):
+    def search(self,instance,variables,strategy,sub_tour_elimination = "DKJ"):
 
         rho, X,Y, dist_courier = variables
 
@@ -83,12 +84,50 @@ class MIPsolver:
         class ElementNotFoundException(Exception):
             pass
         try:
+            
             self.solver.solve(solver)
             end_time = datetime.now()
             interval = end_time - start_time
-
-            print("Time interval needed to solve the model: ", interval)
-
+            if sub_tour_elimination != "DKJ":
+                print("Time interval needed to solve the model: ", interval)
+            elif sub_tour_elimination == "DKJ" :
+                
+                print("entro bro##################################################")
+                route = [[] for i in range(m)]
+                for k in range(m):
+                    route[k] = [(i,j) for i in range(n+1) \
+                        for j in range(n+1) if pulp.value(X[i][j][k]) == 1]
+                print(route)
+                route_plan = [self.get_plan(route[k]) 
+                              for k in range(m)]
+                print(route_plan)
+                subtour=[[] for k in range(m)] 
+                
+                print(subtour)
+                print("#####################################")
+                for k in range(m):
+                    #print(len(route_plan))
+                    #print("rout_plan courier ",route_plan[1])
+                    while len(route_plan[k]) > 1:  
+                            
+                            #print("rout_plan courier ",route_plan[1])
+                            for i in range(len(route_plan[k])):
+                                
+                                    self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][k] \
+                                                    for j in range(len(route_plan[k][i]))) <=\
+                                                                len(route_plan[k][i]) - 1
+                                                            
+                            self.solver.solve(solver)
+                            
+                            route[k] = [(i, j) for i in range(n+1) \
+                                            for j in range(n+1) 
+                                            if X[i][j][k].varValue == 1]
+                            
+                            route_plan[k] = self.get_plan(route[k])
+                            subtour[k].append(len(route_plan[k]))
+                    
+                    #print(subtour)     
+                         
             optimal = True
 
             time = int(self.solver.solutionTime)
@@ -97,6 +136,7 @@ class MIPsolver:
 
             solution_matrix = np.array([[[int(X[i][j][k].varValue) for k in range(m)]
                             for j in range(n + 1)] for i in range(n + 1)])
+            
             
             dist_cour_mat = [int(dist_courier[k].varValue) for k in range(m)]
 
@@ -119,7 +159,7 @@ class MIPsolver:
                             travel.append(solution[k][j][1])
                             element_present.add(solution[k][j][1])
                 sol.append(travel)
-            
+            print(sol)   
             for i in range(n+1):
                 if i not in element_present:
                     raise ElementNotFoundException(
@@ -158,8 +198,26 @@ class MIPsolver:
 
 
             return time, False, None , []
+        
+    def get_plan(self,r0):
+        print("firstr",r0)
+        r=copy.copy(r0)
+        route = []
+        while len(r) != 0:
+            plan = [r[0]]
+            del (r[0])
+            l = 0
+            while len(plan) > l:
+                l = len(plan)
+                for i, j in enumerate(r):
+                    if plan[-1][1] == j[0]:
+                        plan.append(j)
+                        del (r[i])
+            route.append(plan)
+        print("second",route)
+        return(route)
    
-    def model1(self,instance):
+    def model1(self,instance,strategy_sub_t = "DKJ"):
 
         m,n,s,l,D = instance.unpack()  
 
@@ -173,7 +231,6 @@ class MIPsolver:
         X = [[[ LpVariable(name=f'X_{i}_{j}_{k}', lowBound=0, upBound=1, cat=LpBinary) 
                for k in range(m) ] for j in range(n + 1) ] for i in range(n + 1)]
         
-        Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) for i in range(n)] for k in range(m)]
         
         # Create the distance variables for each courier
         dist_courier = [LpVariable(name=f'dist_cour_{i}', cat=LpInteger ,
@@ -186,38 +243,60 @@ class MIPsolver:
         #1. vehicle leaves node that it enters
         for j in range(n + 1):
             for k in range(m):
-                self.solver += lpSum([X[i][j][k] for i in range(n + 1)]) == lpSum([X[j][i][k] for i in range(n + 1)])
+                self.solver += lpSum([X[i][j][k] 
+                                      for i in range(n + 1)]) == lpSum([X[j][i][k] 
+                                                                                   for i in range(n + 1)])
 
 
         # #2 every node is entered once
         for j in range (n):
-            self.solver += lpSum([[X[i][j][k] for i in range(n + 1)] for k in range(m)]) == 1
+            self.solver += lpSum([[X[i][j][k] 
+                                   for i in range(n + 1)] for k in range(m)]) == 1
 
         # # no travel from a node to itself
         for i in range(n + 1):
             for k in range(m):
                 self.solver += X[i][i][k] == 0
 
-
-        
-        for k in range(m):
-            for j in range(n):
+        #######################################################
+        # subtour elimination
+        if strategy_sub_t == "MTZ":
+            Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) 
+                  for i in range(n)] for k in range(m)]
+            
+            for k in range(m):
+                for j in range(n):
+                    for i in range(n):
+                         self.solver += X[i][j][k]*(n-1) + Y[k][j] - Y[k][i]  <= n-2
+                     
+        elif strategy_sub_t == "MTZ_B":
+            Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) 
+                  for i in range(n)] for k in range(m)]
+            
+            for k in range(m):
                 for i in range(n):
-                   self.solver += X[i][j][k]*(n-1) + Y[k][j] - Y[k][i]  <= n-2
-
+                    for j in range(n):
+                        if i!=j :
+                            self.solver += Y[k][j]>= Y[k][i] +1 - (2*n)*(1-X[i][j][k])
+        else:
+            Y = None 
+                           
+        ########################################################
 
         #3 every vehicles leaves the depot
         for k in range(m):
-            self.solver+= lpSum(X[n][j][k] for j in range(n)) == 1
+            self.solver+= lpSum(X[n][j][k] for j in range(n)) == 1 
+            
         
-        # #4 load constraint
+        #4 load constraint
         for k in range(m):
-            self.solver += lpSum([s[j]*X[i][j][k] for j in range( n ) for i in range(n + 1)]) <= l[k]
-
+            self.solver += lpSum([s[j]*X[i][j][k] for j in range( n ) 
+                                  for i in range(n + 1)]) <= l[k]
 
         # distance constraint
         for k in range(m): 
-            self.solver += dist_courier[k] == lpSum(D[i][j] * X[i][j][k] for j in range(n + 1) for i in range(n + 1))
+            self.solver += dist_courier[k] == lpSum(D[i][j] * X[i][j][k]
+                                                    for j in range(n + 1) for i in range(n + 1))
 
         #7. Goal function. We want to minimize the max distance.
         for i in range(m):

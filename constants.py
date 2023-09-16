@@ -10,7 +10,8 @@ GECODE = 1
 HIGHS = 2
 LCG = 3
 #SOLVERS_CP = {CHUFFED:'chuffed',GECODE:'gecode',HIGHS: "highs",GUROBI: "lcg"}
-SOLVERS_CP = {CHUFFED:'chuffed', LCG: "lcg"}
+#SOLVERS_CP = {CHUFFED:'chuffed', LCG: "lcg"}
+SOLVERS_CP = {CHUFFED:'chuffed'}
 
 # SAT
 LINEAR_SEARCH = 0
@@ -28,4 +29,5 @@ SOLVERS_SMTlib = {Z3: "z3"}
 CBC = 0
 GLPK = 1
 HIGH = 2
-STRATEGIES_MIP_DICT = {CBC:"CBC",GLPK: "GLPK"}
+#STRATEGIES_MIP_DICT = {CBC:"CBC",GLPK: "GLPK"}
+STRATEGIES_MIP_DICT = {CBC:"CBC"}
