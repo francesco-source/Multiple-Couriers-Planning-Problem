@@ -50,7 +50,7 @@ class MIPsolver:
                     print()
             print()          
 
-        save_file(path, num + ".json", json_dict)
+            save_file(path, num + ".json", json_dict)
 
     def print_obj_dist(self,obj,sym,strastr):
         print(f"Max distance found using {strastr} solver{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '} {obj}")
@@ -105,8 +105,8 @@ class MIPsolver:
                     for k in range(m):
                         while len(route_plan[k]) > 1:  
                             for i in range(len(route_plan[k])):
-                                for s in range(m):
-                                    self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][s] \
+                                # for s in range(m):
+                                    self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][k] \
                                                     for j in range(len(route_plan[k][i]))) <=\
                                                                 len(route_plan[k][i]) - 1
                                                             
