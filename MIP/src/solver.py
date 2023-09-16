@@ -92,19 +92,20 @@ class MIPsolver:
                 print("Time interval needed to solve the model: ", interval)
             elif sub_tour_elimination == "DKJ" :
                 
-                print("entro bro##################################################")
+                #print("entro bro##################################################")
                 route = [[] for i in range(m)]
+                
                 for k in range(m):
                     route[k] = [(i,j) for i in range(n+1) \
                         for j in range(n+1) if pulp.value(X[i][j][k]) == 1]
-                print(route)
+                #print(route)
                 route_plan = [self.get_plan(route[k]) 
                               for k in range(m)]
-                print(route_plan)
+                #print(route_plan)
                 subtour=[[] for k in range(m)] 
                 
-                print(subtour)
-                print("#####################################")
+                #print(subtour)
+                #print("#####################################")
                 for k in range(m):
                     #print(len(route_plan))
                     #print("rout_plan courier ",route_plan[1])
@@ -118,25 +119,26 @@ class MIPsolver:
                                                                 len(route_plan[k][i]) - 1
                                                             
                             self.solver.solve(solver)
-                            
-                            route[k] = [(i, j) for i in range(n+1) \
+                            print("Solver_status")
+                            for s in range(m):
+                                route[s] = [(i, j) for i in range(n+1) \
                                             for j in range(n+1) 
-                                            if X[i][j][k].varValue == 1]
-                            
-                            route_plan[k] = self.get_plan(route[k])
-                            subtour[k].append(len(route_plan[k]))
+                                            if X[i][j][s].varValue == 1]
+                                route_plan[s] = self.get_plan(route[s])
+                            print(route_plan)
+                            #print(route_plan[k])
+                    subtour[k].append(len(route_plan[k]))
                     
                     #print(subtour)     
-                         
+            print(route_plan)             
             optimal = True
 
             time = int(self.solver.solutionTime)
             
             obj = int(rho.varValue)
-
+            
             solution_matrix = np.array([[[int(X[i][j][k].varValue) for k in range(m)]
                             for j in range(n + 1)] for i in range(n + 1)])
-            
             
             dist_cour_mat = [int(dist_courier[k].varValue) for k in range(m)]
 
@@ -150,16 +152,18 @@ class MIPsolver:
                         if i != j and solution_matrix[i][j][k] == 1:
                             route.append([i, j])
                 solution.append(route)
+                
             sol = []
             for k in range(m):
                 travel = [n]
                 for i in range(len(solution[k])):
-                    for j in range(len(solution[k])):                   
+                    for j in range(len(solution[k])): 
+                                       
                         if solution[k][j][0] == travel[i]:
                             travel.append(solution[k][j][1])
                             element_present.add(solution[k][j][1])
-                sol.append(travel)
-            print(sol)   
+                sol.append(travel) 
+            
             for i in range(n+1):
                 if i not in element_present:
                     raise ElementNotFoundException(
@@ -200,7 +204,6 @@ class MIPsolver:
             return time, False, None , []
         
     def get_plan(self,r0):
-        print("firstr",r0)
         r=copy.copy(r0)
         route = []
         while len(r) != 0:
@@ -214,7 +217,6 @@ class MIPsolver:
                         plan.append(j)
                         del (r[i])
             route.append(plan)
-        print("second",route)
         return(route)
    
     def model1(self,instance,strategy_sub_t = "DKJ"):
@@ -278,7 +280,7 @@ class MIPsolver:
                     for j in range(n):
                         if i!=j :
                             self.solver += Y[k][j]>= Y[k][i] +1 - (2*n)*(1-X[i][j][k])
-        else:
+        elif strategy_sub_t == "DKJ":
             Y = None 
                            
         ########################################################
