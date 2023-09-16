@@ -53,7 +53,7 @@ class MIPsolver:
         save_file(path, num + ".json", json_dict)
 
     def print_obj_dist(self,obj,sym,strastr):
-        print(f"Max distance found using {strastr} solver,{' without sb :' if sym==NO_SYMMETRY_BREAKING else ''} {obj}")
+        print(f"Max distance found using {strastr} solver{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '} {obj}")
 
     
     def optimize(self,instance,strategy,variables):
@@ -62,7 +62,7 @@ class MIPsolver:
 
     def search(self,instance,variables,strategy,sub_tour_elimination = "DKJ"):
 
-        rho, X,Y, dist_courier = variables
+        rho, X, _, dist_courier, _ = variables
 
         m,n, _,_, D = instance.unpack()
 
@@ -205,7 +205,7 @@ class MIPsolver:
             route.append(plan)
         return(route)
    
-    def model1(self,instance,strategy_sub_t = "DKJ"):
+    def model1(self,instance,strategy_sub_t = "MTZ"):
 
         m,n,s,l,D = instance.unpack()  
 
@@ -219,8 +219,11 @@ class MIPsolver:
         X = [[[ LpVariable(name=f'X_{i}_{j}_{k}', lowBound=0, upBound=1, cat=LpBinary) 
                for k in range(m) ] for j in range(n + 1) ] for i in range(n + 1)]
         
-        
-        # Create the distance variables for each courier
+        # Load carried by each courier
+        load_courier = [LpVariable(name=f'load_cour_{i}', cat=LpInteger ,
+                                    lowBound = np.min(s), upBound=np.sum(s)) for i in range(m)]
+
+        # Distance travelled by each courier
         dist_courier = [LpVariable(name=f'dist_cour_{i}', cat=LpInteger ,
                                     lowBound = distance_lb, upBound=distance_ub) for i in range(m)]
         
@@ -278,8 +281,9 @@ class MIPsolver:
         
         #4 load constraint
         for k in range(m):
-            self.solver += lpSum([s[j]*X[i][j][k] for j in range( n ) 
-                                  for i in range(n + 1)]) <= l[k]
+            self.solver += load_courier[k] == lpSum([s[j]*X[i][j][k] for j in range( n ) 
+                                  for i in range(n + 1)]) 
+            self.solver += load_courier[k] <= l[k]
 
         # distance constraint
         for k in range(m): 
@@ -292,26 +296,23 @@ class MIPsolver:
 
         self.solver += rho
 
-        return rho,X,Y,dist_courier
+        return rho, X, Y, dist_courier, load_courier
 
     def add_sb_constraint(self,instance,variables):
         
-        rho , X,Y, dist_courier = variables
+        _ , X, _, _, load_courier = variables
         
-        m, n, _, _, _ = instance.unpack()
+        m, n, _, _, D = instance.unpack()
         
-        # load constraint 
-
-        # li ha fatti chat gpt non penso abbiano senso. Nessun senso
-        for k in range(m):
-            for i in range(n):
-                for j in range(i + 1, n ):
-                     self.solver += Y[k][i] + (n - 1) * X[i][j][k] <= Y[k][j]
-
-        for k in range(m):
-            for i in range(n):
-                for j in range(i + 1, n):
-                    self.solver += Y[k][i] <= Y[k][j]
+        # 
+        for k in range(m-1):
+            self.solver += load_courier[k+1] <= load_courier[k]
+        # if the distance matrix is symmetric, we have a reflection symmetry between any courier path and its inverse
+        if (D == D.T).all():
+            print("Symmetric distance matrix")
+            for k in range(m):
+                for i in range(n):
+                    self.solver += X[i][n][k] <= lpSum(X[n][j][k] for j in range(n))
 
             
 
