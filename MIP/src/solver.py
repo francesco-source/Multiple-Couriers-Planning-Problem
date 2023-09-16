@@ -1,11 +1,10 @@
 from pulp import *
 import numpy as np
 from utils import *
-import time
+import time as t
 import signal
 from MIP.src.mip_utils import *
 from constants import *
-from datetime import datetime
 import copy
 
 class MIPsolver:
@@ -54,16 +53,13 @@ class MIPsolver:
         save_file(path, num + ".json", json_dict)
 
     def print_obj_dist(self,obj,sym,strastr):
-        
-            print(f"Max distance found using {strastr} solver,{' without sb :' if sym==NO_SYMMETRY_BREAKING else ''} {obj}")
+        print(f"Max distance found using {strastr} solver,{' without sb :' if sym==NO_SYMMETRY_BREAKING else ''} {obj}")
 
     
     def optimize(self,instance,strategy,variables):
-             
-             return self.search(instance,variables,strategy)
-         
+        return self.search(instance,variables,strategy)
 
-    
+
     def search(self,instance,variables,strategy,sub_tour_elimination = "DKJ"):
 
         rho, X,Y, dist_courier = variables
@@ -79,39 +75,35 @@ class MIPsolver:
 
         solver.msg = False
         self.solver.solutionTime = self.timeout
-        start_time = datetime.now()
+        start_time = t.time()
 
         class ElementNotFoundException(Exception):
             pass
+
         try:
-            
             self.solver.solve(solver)
-            end_time = datetime.now()
+            end_time = t.time()
             interval = end_time - start_time
+
             if sub_tour_elimination != "DKJ":
                 print("Time interval needed to solve the model: ", interval)
+
             elif sub_tour_elimination == "DKJ" :
-                
-                #print("entro bro##################################################")
                 route = [[] for i in range(m)]
                 
                 for k in range(m):
                     route[k] = [(i,j) for i in range(n+1) \
                         for j in range(n+1) if pulp.value(X[i][j][k]) == 1]
-                #print(route)
+
                 route_plan = [self.get_plan(route[k]) 
                               for k in range(m)]
-                #print(route_plan)
-                subtour=[[] for k in range(m)] 
+
+                subtour_present = np.array([len(route_plan[k]) > 1 for k in range(m)]).any()
+                subtour = [[] for i in range(m)]
                 
-                #print(subtour)
-                #print("#####################################")
-                for k in range(m):
-                    #print(len(route_plan))
-                    #print("rout_plan courier ",route_plan[1])
-                    while len(route_plan[k]) > 1:  
-                            
-                            #print("rout_plan courier ",route_plan[1])
+                while(subtour_present):
+                    for k in range(m):
+                        while len(route_plan[k]) > 1:  
                             for i in range(len(route_plan[k])):
                                 for s in range(m):
                                     self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][s] \
@@ -125,14 +117,15 @@ class MIPsolver:
                                             if X[i][j][s].varValue == 1]
                                 
                                 route_plan[s] = self.get_plan(route[s])
-                                
-                    subtour[k].append(len(route_plan[k]))
-                    
-                    #print(subtour)     
-            print(route_plan)             
+                            
+                            subtour[k].append(len(route_plan[k]))
+
+                    subtour_present = np.array([len(route_plan[k]) > 1 for k in range(m)]).any()
+       
             optimal = True
 
-            time = int(self.solver.solutionTime)
+            # time = int(self.solver.solutionTime)
+            time = int(t.time() - start_time)
             
             obj = int(rho.varValue)
             
@@ -166,8 +159,7 @@ class MIPsolver:
             for i in range(n+1):
                 if i not in element_present:
                     raise ElementNotFoundException(
-                        "The model wasn't able to encode properly",
-                        "and solve the problem in the time window.")
+                        f"Item {i} is not in the solution")
 
             if self.mode == 'v':
 
@@ -191,15 +183,10 @@ class MIPsolver:
             
             result = [[x + 1 for x in sublist if x != n] for sublist in result]
             
-            
-            
             return time , optimal, obj, result
         
         except ElementNotFoundException as e:
-
             print(e)
-
-
             return time, False, None , []
         
     def get_plan(self,r0):
@@ -311,8 +298,10 @@ class MIPsolver:
         
         rho , X,Y, dist_courier = variables
         
-        m, n , _,_, _ = instance.unpack()
+        m, n, _, _, _ = instance.unpack()
         
+        # load constraint 
+
         # li ha fatti chat gpt non penso abbiano senso. Nessun senso
         for k in range(m):
             for i in range(n):
