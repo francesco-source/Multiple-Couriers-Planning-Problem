@@ -113,20 +113,19 @@ class MIPsolver:
                             
                             #print("rout_plan courier ",route_plan[1])
                             for i in range(len(route_plan[k])):
-                                
-                                    self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][k] \
+                                for s in range(m):
+                                    self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][s] \
                                                     for j in range(len(route_plan[k][i]))) <=\
                                                                 len(route_plan[k][i]) - 1
                                                             
                             self.solver.solve(solver)
-                            print("Solver_status")
                             for s in range(m):
                                 route[s] = [(i, j) for i in range(n+1) \
                                             for j in range(n+1) 
                                             if X[i][j][s].varValue == 1]
+                                
                                 route_plan[s] = self.get_plan(route[s])
-                            print(route_plan)
-                            #print(route_plan[k])
+                                
                     subtour[k].append(len(route_plan[k]))
                     
                     #print(subtour)     
