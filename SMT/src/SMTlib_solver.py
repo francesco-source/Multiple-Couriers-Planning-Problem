@@ -18,20 +18,14 @@ class SMTLIBsolver(SMTsolver):
         self.set_solver()
         self.symmetry = None
         self.file = None
-
-        
-    def set_model(self,instance,strategy = "linear"):
-        """
-        This function is created in the case we want to extend the experiments for the other model
-        for now the file smtlib are set for the best model (model zero)
-        """
-        self.set_constraints(instance= instance, strategy= strategy)
+    
+     
         
        
     def create_file(self, instance, strategy = "linear"):
         # smtlib instruction to suppress warning for using different solvers
         self.set_solver() # setting the Solver to create the model
-        self.set_model(instance, strategy) # setting of the model used
+        self.set_constraints(instance= instance, strategy= strategy)
         to_write = "(set-logic ALL)\n" 
         to_write += self.solver.sexpr()
         with open(self.file, "w") as f:
@@ -49,12 +43,17 @@ class SMTLIBsolver(SMTsolver):
         command = f"timeout {self.timeout} bash {path} '{self.file}' 'max' '{courier_dist_ub}' '{rho_low_bound-1}' '{solver}' '{couriers}' '{num_items + 1}'"
         return command
     
+                         
+
     
     def solve(self):
-        self.output_dir + "/SMTlib/"
+
+        sol_path = self.output_dir + "/SMTlib/"
         strategy = "linear"
         for num, instance in self.data.items():
             json_dict = {}
+            couriers, num_items, item_size, courier_size, distances = instance.unpack()
+
             filename = str(num) + ".json"
             for solver, solverstr in SOLVERS_SMTlib.items():
                 print("File = ", num)
@@ -75,25 +74,16 @@ class SMTLIBsolver(SMTsolver):
                     try:
                         result = subprocess.run(command, shell= True, capture_output= True, text= True)
                         time = t.time() - start_time
-                        print(result)
-                        val = result['stdout'].split('\n')[0]
-                        print(val)
-
-                        import re
-
-
-                        numeri = re.findall(r'\(\(path\d+_\d+ (\d+)\)\)', result['stdout'].split('\n', 1))
-
-                        numeri = [int(numero) for numero in numeri]
-                        print(numeri)
-
-
+                        
+                        text = result.stdout
+                        val, path = output_formatting(text, num_items + 1)
+        
 
                         out_dict = {
                                 'time': time,
-                                'optimal': False,
-                                'obj': val,
-                                'sol': []
+                                'optimal': True,
+                                'obj':  val,
+                                'sol': path
                             }
                     except Exception as e:
                         print("The bash file cannot be executed:", e)
@@ -106,4 +96,12 @@ class SMTLIBsolver(SMTsolver):
                         
                     key_dict = solverstr + symstr
                     json_dict[key_dict] = out_dict
+                    print(out_dict)
+                    save_file(sol_path, filename, out_dict)
+                    
         
+
+
+
+
+

@@ -17,3 +17,24 @@ def at_most_one(bool_vars, name):
 
 def exactly_one(bool_vars, name):
   return And(at_least_one(bool_vars), at_most_one(bool_vars, name))
+
+
+def output_formatting(text, n_items):
+  val = text.split('\n')[0]
+  out_ris = []
+  counter = 0
+  for i in text.split('\n')[1:-1]:
+    if (counter == 0 ):
+        res = []
+    ord =  i.split()[1][:-2]
+    if(ord != str(n_items)):
+        res.append(ord)
+        counter = counter + 1
+    else: 
+        counter = 0
+        if (res != []):
+            out_ris.append(res)
+    
+
+            
+  return val, out_ris  

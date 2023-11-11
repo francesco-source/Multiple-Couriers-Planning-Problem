@@ -18,7 +18,6 @@ class Instance:
         self.corr_inverse = None
         self.courier_sort_dict = None
 
-
     def set_rho_lower_bound(self):  
         last_row = self.D[-1]
         last_column = self.D[:,-1]
@@ -28,17 +27,23 @@ class Instance:
         return lb  
     
     def set_d_low_bound(self):  
-       d_low_bound = int(np.min(self.D[self.D.nonzero()]) * (self.n/self.m +1))
-       return d_low_bound
+        last_row = self.D[-1]
+        last_column = self.D[:,-1]
+        last_column = last_column[last_column != 0]
+        last_row = last_row[last_row !=0]
+        value1 = last_column[np.argmin(last_row)] + min(last_row)
+        value2 = last_row[np.argmin(last_column)] + min(last_column)
+        d_low_bound = max(value1, value2)
+        #print("Distance low bound: ", d_low_bound)
+        return d_low_bound
     
     def set_d_up_bound(self):
        up_bound = np.max(self.D)*self.n //self.m + np.max(np.array(self.D)[:,-1])
        return up_bound
     
     def set_min_max_loads(self):
-      min_l = np.min(self.s) * self.n // self.m
-      max_l = np.sum(np.partition(self.s, self.m)[self.m-1:]) if np.sum(np.partition(self.s, self.m)[self.m:]) <= max(self.l) else max(self.l)
-
+      min_l = np.min(self.s)
+      max_l = np.max(self.l)
       return min_l, max_l
     
         
@@ -62,8 +67,7 @@ class Instance:
         self.corr_inverse = np.fromiter((x for _, x in transformation_function), dtype= int)
 
         self.l, self.courier_sort_dict = self.sort_l(reverse=True)
-        #self.l = sorted(self.l, reverse= True)
-        # np.array(inst.l)[corr_inverse] to invert the sorting of l
+
       
       
     def post_process_instance(self,  distances = [], solution = [[]]):
@@ -118,6 +122,10 @@ def load_data(path: str, num):
   
 def save_file(path, filename, json_dict):
   if not os.path.exists(path):
+      os.makedirs(path)
+      
+  with open(path + filename, 'w') as file:
+      json.dump(json_dict, file)
       os.makedirs(path)
       
   with open(path + filename, 'w') as file:
