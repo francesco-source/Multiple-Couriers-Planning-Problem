@@ -7,6 +7,12 @@ import numpy as np
 ## MANIPULATE NUMBERS
 
 def toBinary(num, length = None, dtype = int):
+  """
+      Encodes a number in binary form in the desired type
+      :param num: the int number to convert
+      :param length: the output length
+      :param dtype: the output data type. It supports integers, booleans or z3 booleans
+  """
   num_bin = bin(num).split("b")[-1]
   if length:
       num_bin = "0"*(length - len(num_bin)) + num_bin
@@ -15,6 +21,10 @@ def toBinary(num, length = None, dtype = int):
 
 
 def toInteger(bool_list):
+  """
+      Decodes a number from binary form
+      :bool_list: a list containing BoolVal variables
+  """
   binary_string = ''.join('1' if b else '0' for b in bool_list)
   return int(binary_string, 2)
 
@@ -41,9 +51,9 @@ def exactly_one(bool_vars, name):
 
 def lesseq(a, b):
   """
-  a and b are lists of variables of equal length containing each the binary
-  encoding of an integer number. The constraint is true if a is less than or
-  equal to b
+      The constraint a <= b whose inputs are in binary encoding
+      :param a: 
+      :param b:
   """
   constraints = []
   constraints.append(Or(Not(a[0]),b[0]))
@@ -52,22 +62,43 @@ def lesseq(a, b):
   return And(constraints)
 
 def ohe_less(a, b):
-  """a and b are onehotencodings of two numbers. 
-  The constraint is true if a is less than b """
+  """
+      The constraint a < b whose inputs are in binary encoding
+      :param a: 
+      :param b:
+  """
   n = len(a)
   return Or([And(a[k], Or([b[j] for j in range(k+1, n)])) for k in range(n-1)])
   
 
 def equals(a, b):
+  """
+      The constraint a == b
+  """
   return And([a[i] == b[i] for i in range(len(a))])
 
 def one_bit_full_adder(a, b, c_in, s, c_out):
-    xor_ab = Xor(a, b)
-    constr_1 = s == Xor(xor_ab, c_in)
-    constr_2 = c_out == Or(And(xor_ab, c_in), And(a, b))
-    return And(constr_1, constr_2)
+  """
+      The constraints needed to encode the 1bit full adder. a + b + c_in = s with c_out
+      :param a:
+      :param b: 
+      :param c_in:    carry in
+      :param s:       result
+      :param c_out:   carry out  
+  """
+  xor_ab = Xor(a, b)
+  constr_1 = s == Xor(xor_ab, c_in)
+  constr_2 = c_out == Or(And(xor_ab, c_in), And(a, b))
+  return And(constr_1, constr_2)
 
 def full_adder(a, b, d, name= ""):
+  """
+      The constraints needed to encode the complete full adder. a + b = d
+      :param a:   binary encoded inputs
+      :param b:   binary encoded inputs
+      :param d:   binary encoded result
+      :param name:  unique string to disambiguate the carry in/out slack variables
+  """
   if len(a)==len(b):
     n = len(a)
   elif  (len(a)>len(b)):
@@ -87,6 +118,12 @@ def full_adder(a, b, d, name= ""):
   return And(constr)
 
 def sum_vec(vec, s, name= ""):
+  """
+      The constraints needed to sum all the numbers inside the vector
+      :param vec:   list of binary encoded numbers
+      :param s:   binary encoded result
+      :param name:  name to disambiguate the carry in/out slack variables
+  """
   if len(vec) == 2:
     return full_adder(a= vec[0], b= vec[1], d= s, name= name)
   elif len(vec) == 1:
@@ -101,6 +138,12 @@ def sum_vec(vec, s, name= ""):
     return And(constr)
 
 def maximum(vec, maxi, name= ""):
+  """
+      The constraints needed to find the maximum number inside a vector
+      :param vec:   list of binary encoded numbers
+      :param maxi:  binary encoded maximum
+      :param name:  name to disambiguate the slack variables
+  """
   if len(vec) == 1:
     return equals(vec[0], maxi)
   elif len(vec) == 2:
