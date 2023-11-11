@@ -11,7 +11,7 @@ HIGHS = 2
 LCG = 3
 #SOLVERS_CP = {CHUFFED:'chuffed',GECODE:'gecode',HIGHS: "highs",GUROBI: "lcg"}
 #SOLVERS_CP = {CHUFFED:'chuffed', LCG: "lcg"}
-SOLVERS_CP = {CHUFFED:'chuffed'}
+SOLVERS_CP = {CHUFFED:'chuffed',GECODE:'gecode'}
 
 # SAT
 LINEAR_SEARCH = 0
