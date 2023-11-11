@@ -66,7 +66,6 @@ class MIPsolver:
         rho, X, _, dist_courier, _ = variables
 
         m,n, _,_, D = instance.unpack()
-        print(listSolvers(onlyAvailable=True))
         if strategy == CBC:
             solver = PULP_CBC_CMD(timeLimit=self.timeout, msg=1)
         elif strategy == GLPK:
