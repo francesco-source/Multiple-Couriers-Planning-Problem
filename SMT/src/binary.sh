@@ -20,11 +20,12 @@ o_variable_upper_bound="(assert (<= $o_variable $o_value))"
 check_sat="(check-sat)"
 get_value="(get-value ($o_variable))"
 
-echo "$o_variable_lower_bound" >> "$file"
-echo "$o_variable_upper_bound" >> "$file"
-echo "$check_sat" >> "$file"
-echo "$get_value" >> "$file"
-
+{
+    echo "$o_variable_lower_bound"
+    echo "$o_variable_upper_bound" 
+    echo "$check_sat"
+    echo "$get_value" 
+} >> "$file"
 
 u_bound=$o_value
 bound_difference=$((u_bound - l_bound))
@@ -88,10 +89,11 @@ do
             check_sat="(check-sat)"
             get_value="(get-value ($o_variable))"
 
-            echo "$assert_statement" >> "$file"
-            echo "$check_sat" >> "$file"
-            echo "$get_value" >> "$file"
-
+            {
+                echo "$assert_statement" 
+                echo "$check_sat" 
+                echo "$get_value" 
+            } >> "$file"
             
   else
    first=1
@@ -125,9 +127,10 @@ if [[ $one_sat -eq 1 ]]; then
           declare_fun="(declare-fun path${i}_${j} () Int)"
           assert_equal="(assert (= (select asg${i} ${j}) path${i}_${j}))"
 
-            echo "$declare_fun" >> "$file"
-            echo "$assert_equal" >> "$file"
-           
+            {
+                echo "$declare_fun" 
+                echo "$assert_equal" 
+            } >> "$file"
            done 
     done
     echo "(check-sat)" >> $file

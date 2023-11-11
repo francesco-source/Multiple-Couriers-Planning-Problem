@@ -19,9 +19,12 @@ assert_statement="(assert (< $o_variable $o_value))"
 check_sat="(check-sat)"
 get_value="(get-value ($o_variable))"
 
-echo "$assert_statement" >> "$file"
-echo "$check_sat" >> "$file"
-echo "$get_value" >> "$file"
+
+{
+  echo "$assert_statement" 
+  echo "$check_sat" 
+  echo "$get_value" 
+} >> "$file"
 
 unsat=0
 #searching for new solution
