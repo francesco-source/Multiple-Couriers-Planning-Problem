@@ -8,13 +8,6 @@ RUN apt-get update
 RUN apt-get install -y python3.10
 RUN apt-get install -y python3-pip
 RUN apt-get install -y glpk-utils
-
-RUN apt-get install -y wget
-RUN apt-get install -y cmake
-RUN apt-get -y install make
-RUN apt-get install -y m4 
-	
-
 RUN python3 -m pip install -r requirements.txt
 RUN apt-get install -y z3
 RUN apt-get install -y cvc4
