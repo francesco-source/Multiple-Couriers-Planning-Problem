@@ -1,8 +1,12 @@
 SYMMETRY_BREAKING = 0
 NO_SYMMETRY_BREAKING = 1
 SYM_DICT = { NO_SYMMETRY_BREAKING: "", SYMMETRY_BREAKING: "_symbreak"}
-# SYM_DICT = { SYMMETRY_BREAKING: "_symbreak"}
-# SYM_DICT = {NO_SYMMETRY_BREAKING: ""}
+NO_MAX_N_PACKS = 0
+MAX_N_PACKS = 1
+DICT_N_PACKS = {NO_MAX_N_PACKS : "max_n_packs = (n - m + 1)"}
+                #MAX_N_PACKS : "max_n_packs = n/m + n - m*(n/m)"}
+#SYM_DICT = { SYMMETRY_BREAKING: "_symbreak"}
+SYM_DICT = {NO_SYMMETRY_BREAKING: "",}
 
 # CP
 CHUFFED = 0
@@ -11,7 +15,7 @@ HIGHS = 2
 LCG = 3
 #SOLVERS_CP = {CHUFFED:'chuffed',GECODE:'gecode',HIGHS: "highs",GUROBI: "lcg"}
 #SOLVERS_CP = {CHUFFED:'chuffed', LCG: "lcg"}
-SOLVERS_CP = {CHUFFED:'chuffed',GECODE:'gecode'}
+SOLVERS_CP = { GECODE:'gecode'}
 
 # SAT
 LINEAR_SEARCH = 0
@@ -30,6 +34,10 @@ SOLVERS_SMTlib = {CVC4 :"cvc4"}
 
 # MIP
 CBC = 0
+GLPK = 1
+HIGH = 2
+#STRATEGIES_MIP_DICT = {CBC:"CBC",GLPK: "GLPK"}
+STRATEGIES_MIP_DICT = {CBC:"CBC",GLPK:"GLPK",HIGH:"HIGH"}
 GLPK = 1
 HIGH = 2
 #STRATEGIES_MIP_DICT = {CBC:"CBC",GLPK: "GLPK"}
