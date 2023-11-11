@@ -20,7 +20,7 @@ class SMTLIBsolver(SMTsolver):
         self.file = None
 
         
-    def set_model(self,instance,strategy = "binary"):
+    def set_model(self,instance,strategy = "linear"):
         """
         This function is created in the case we want to extend the experiments for the other model
         for now the file smtlib are set for the best model (model zero)
@@ -28,7 +28,7 @@ class SMTLIBsolver(SMTsolver):
         self.set_constraints(instance= instance, strategy= strategy)
         
        
-    def create_file(self, instance, strategy = "binary"):
+    def create_file(self, instance, strategy = "linear"):
         # smtlib instruction to suppress warning for using different solvers
         self.set_solver() # setting the Solver to create the model
         self.set_model(instance, strategy) # setting of the model used
@@ -52,7 +52,7 @@ class SMTLIBsolver(SMTsolver):
     
     def solve(self):
         self.output_dir + "/SMTlib/"
-        strategy = "binary"
+        strategy = "linear"
         for num, instance in self.data.items():
             json_dict = {}
             filename = str(num) + ".json"
@@ -72,21 +72,38 @@ class SMTLIBsolver(SMTsolver):
                         
                     print("Starting Execution")
                     start_time = t.time()
-                    # try:
-                    result = subprocess.run(command, shell= True, capture_output= True, text= True)
-                    time = t.time() - start_time
-                    print(result)
-                    # except Exception as e:
-                    #     print("The bash file cannot be executed:", e)
-                    #     out_dict = {
-                    #         'time': self.timeout,
-                    #         'optimal': False,
-                    #         'obj': "n/a",
-                    #         'sol': []
-                    #     }
+                    try:
+                        result = subprocess.run(command, shell= True, capture_output= True, text= True)
+                        time = t.time() - start_time
+                        print(result)
+                        val = result['stdout'].split('\n')[0]
+                        print(val)
+
+                        import re
+
+
+                        numeri = re.findall(r'\(\(path\d+_\d+ (\d+)\)\)', result['stdout'].split('\n', 1))
+
+                        numeri = [int(numero) for numero in numeri]
+                        print(numeri)
+
+
+
+                        out_dict = {
+                                'time': time,
+                                'optimal': False,
+                                'obj': val,
+                                'sol': []
+                            }
+                    except Exception as e:
+                        print("The bash file cannot be executed:", e)
+                        out_dict = {
+                             'time': self.timeout,
+                             'optimal': False,
+                             'obj': "n/a",
+                             'sol': []
+                         }
                         
                     key_dict = solverstr + symstr
-                    #json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
-                    
+                    json_dict[key_dict] = out_dict
         
-

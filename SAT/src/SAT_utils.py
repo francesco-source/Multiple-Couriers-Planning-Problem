@@ -1,5 +1,5 @@
 from itertools import combinations
-from z3 import *
+from z3.z3 import *
 import math
 import numpy as np
 

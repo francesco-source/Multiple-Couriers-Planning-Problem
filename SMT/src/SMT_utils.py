@@ -1,4 +1,4 @@
-from z3 import *
+from z3.z3 import *
 
 def at_least_one(bool_vars):
   return Or(bool_vars)

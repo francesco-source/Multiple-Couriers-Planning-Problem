@@ -8,11 +8,9 @@ packages=$7
 solver_choice=$5
 
 
-if [[ "$solver_choice" == "cvc4" ]]; then
-    solver=( cvc4 --lang smt --produce-models --incremental )
-else
-    echo "SOLVER NOT SUPPORTED" >&2
-    exit 1
+if [solver_choice == "cvc4"]; then
+ solver=( cvc4 --lang smt --produce-models --incremental ) ;;
+ echo "Solver NOT SUPPORTED" >&2; unsat 1;;
 fi
 
 assert_statement="(assert (< $o_variable $o_value))"
@@ -25,8 +23,8 @@ echo "$get_value" >> "$file"
 
 unsat=0
 #searching for new solution
-o_value=$((o_value - 1))
-one_sat=0
+o_value= $(( o_value - 1))
+
 while true;
 do
 first=0
@@ -36,10 +34,10 @@ do
     unsat=1
     break;
   fi
-one_sat=1
+
   if [[ $first -eq 0 ]];then 
-   sed -i '$ d' $file
-   sed -i '$ d' $file
+   sed -i '$ d' $in_file
+   sed -i '$ d' $in_file
   assert_statement="(assert (< $o_variable $o_value))"
     check_sat="(check-sat)"
     get_value="(get-value ($o_variable))"
@@ -54,10 +52,10 @@ one_sat=1
 
   else 
     val=$(echo "$text" | sed 's/[^0-9]*//g') # line to extract the value of the actual solution
-    if [ $o_value -gt $val ]; then
+    if [ $o_value > $val ]; then
        o_value=$val
     else
-       o_value=$((o_value - 1))
+       o_value= $(( o_value - 1))
     fi
   fi 
 done < <("${solver[@]}" <"$file")
@@ -68,14 +66,14 @@ done
 
 
 if
-  [[ $one_sat -eq 0 ]]
+  [[ $unsat -eq 1 ]]
 then
   if [ "$text" == 'unsat' ]; then
     echo '======= UNSAT ======'
   else
     echo '===== UNKNOWN ====='
   fi
-elif [ "$text" == 'unsat' ]; then
+elif [ "$text" == 'sat' ]; then
   echo $val
   sed -i '$ d' $file 
   sed -i '$ d' $file 
@@ -98,11 +96,11 @@ elif [ "$text" == 'unsat' ]; then
 
   for ((i=0; i<couriers; i++));do
   for ((j=0; j<packages; j++));do
-    echo "(get-value (path$i"_"$j))">> $file
+    echo "(get-value (val$i"_"$j))">> $file
   done
   done
   while read text; do
-  	if [ "$text" != 'sat' ]; then
+  	if [ $text != 'sat' ]; then
   	   	echo $text
   	fi
   done < <("${solver[@]}" <"$file") 

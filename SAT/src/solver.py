@@ -2,6 +2,7 @@ import time as t
 from SAT.src.SAT_utils import *
 from constants import *
 from utils import *
+import z3.z3
 
 class SATsolver:
     def __init__(self, data, output_dir, timeout=300, mode = 'v'):
@@ -55,6 +56,7 @@ class SATsolver:
         return time, optimal, obj, sol
     
     def linear_search(self, instance, variables):
+        
         rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()
         maxDistBin= int(np.ceil(np.log2(n * np.max(D))))
@@ -67,9 +69,9 @@ class SATsolver:
         optimal = True
 
         self.solver.push()
+        #search for a statifiable solution 
         while(satisfiable):
             status = self.solver.check()
-
             if status == sat:
                 iter += 1
                 model = self.solver.model()

@@ -1,147 +1,160 @@
-#!/bin/bash
-
-# Usage:
-#   ./smt-opt <SMT-LIB file> <obj.var name> <initial bound> <solver> <min/max>
-# No (get-model) query should in the SMT-LIB input file.
-
-# Setting parameters
-in_file=$1
-obj_var=$2
-obj_val=$3
-lower_bound=$4
-
-solve_type=$5
-case $solve_type in
-  z3)   solver_cmd=( z3 -in ) ;;
-  cvc4) solver_cmd=( cvc4 --lang smt --produce-models --incremental ) ;;
-  cvc5) solver_cmd=( cvc5 --produce-models --incremental ) ;;
-  *)    echo "ERROR: Unknown solver type" >&2; exit 1;;
-esac
-
-couriers=$6
-items=$7
-# Minimization problem.
-rel='<='
-next=-1
-rel1='>='
-SOL=0
-# Inserting first constraints to check if the problem is sat or not
-echo "(assert ($rel1 $obj_var $lower_bound))" >> $in_file
-echo "(assert ($rel $obj_var $obj_val))" >> $in_file
-echo "(check-sat)" >> $in_file
-echo "(get-value ($obj_var))" >> $in_file
-#${solver_cmd[@]} < $in_file
-out=0
-under="_"
-update=1
-upper_bound=$obj_val
-sub_tr=$((upper_bound - lower_bound))
-bound_distance=$((sub_tr / 2))
-middle=$((upper_bound - bound_distance))
-while true;
-do
-step=0
-while read line;
-do
-  if [[ "$line" = 'unsat' && $SOL = 0 ]]; then # the instance is unsat, exit from the loop
-    out=1
-    break;
-  fi
-  
-  if [ $sub_tr = 1 ];then
-      middle=$lower_bound
-  else
-      middle=$((upper_bound - bound_distance))
-  fi
-  
- 
- if [ "$bound_distance" -lt 1 ];then # complete the binary searcj
-    out=1
-    #break;
-  fi
-  
-  if [ "$line" == "sat" ]; then # the actual solution is sat, so take the result given by the model
-    update=1
-  fi
-  if [ "$line" == "unsat" ]; then  # the actual solution is sat, so use the previus results
-    update=0
-  fi
-  SOL=1
-  if [ $step = 0 ];then # the line read is sat or unsat
-   step=1
-   #echo "Trying value = $middle" 
-   if [ $update = 0 ];then
-   	sed -i '$ d' $in_file
-   fi
-   # deleting useless asser to insert the new assert
-   sed -i '$ d' $in_file
-   sed -i '$ d' $in_file
-  else
-  
-   if [ $update = 1 ];then
-      val=$(echo "$line" | sed 's/[^0-9]*//g') # line to take the actual results given by the model
-      obj_val=$val
-      upper_bound=$obj_val
-      sub_tr=$((upper_bound - lower_bound))
-      bound_distance=$((sub_tr / 2))
-      middle=$((upper_bound - bound_distance))
-  else
-      lower_bound=$middle
-      sub_tr=$((upper_bound - lower_bound))
-      bound_distance=$((sub_tr / 2))
-      middle=$((upper_bound - bound_distance))
-    
-  fi
-  echo "(assert ($rel $obj_var $middle))" >> $in_file
-  echo "(check-sat)" >> $in_file
-  echo "(get-value ($obj_var))" >> $in_file
-  fi
-done < <("${solver_cmd[@]}" <"$in_file")
-# updating of the variables
-if [ $out = 1 ]; then
-    break;
-fi
-done
-
-if
-  [[ $SOL -eq 0 ]]
-then
-  if [ "$line" = 'unsat' ]; then
-    echo 'unsat'
-  else
-    echo 'unknown'
-  fi
+solver_choice=$5
+#check if the solver is correct
+if [[ "$solver_choice" == "cvc4" ]]; then
+    solver=( cvc4 --lang smt --produce-models --incremental )
 else
-  echo $obj_val
-  sed -i '$ d' $in_file # deleting get value of max
-  sed -i '$ d' $in_file 
-  sed -i '$ d' $in_file 
-	
-  for ((i=0; i<couriers; i++));do
-  for ((j=0; j<items; j++));do
-  
-  echo "(declare-fun val$i$under$j () Int)" >> $in_file
-  echo "(assert (= (select asg$i $j) val$i$under$j))" >> $in_file
-  
-  
-  done
-  done
-  echo "(check-sat)" >> $in_file
-  for ((i=0; i<couriers; i++));do
-  for ((j=0; j<items; j++));do
-  echo "(get-value (val$i$under$j))">> $in_file
-  done
-  done
-  while read line; do
-  	if [ $line == 'sat' ]; then
-  	   continue
-  
-  	fi
-  	echo $line
-  	
-  done < <("${solver_cmd[@]}" <"$in_file")
+    echo "SOLVER NOT SUPPORTED" >&2
+    exit 1
 fi
 
+
+file=$1
+couriers=$6
+packages=$7
+o_variable=$2
+o_value=$3
+l_bound=$4
+
+o_variable_lower_bound="(assert (>= $o_variable $l_bound))"
+o_variable_upper_bound="(assert (<= $o_variable $o_value))"
+check_sat="(check-sat)"
+get_value="(get-value ($o_variable))"
+
+echo "$o_variable_lower_bound" >> "$file"
+echo "$o_variable_upper_bound" >> "$file"
+echo "$check_sat" >> "$file"
+echo "$get_value" >> "$file"
+
+
+u_bound=$o_value
+bound_difference=$((u_bound - l_bound))
+distance=$((bound_difference / 2))
+middle=$((u_bound - distance))
+
+one_sat=0
+sat=1
+unsat=0 
+
+while true;
+do 
+    first=0
+    while read text;
+    do
+    : '
+     if the solution is unsat and not other 
+     feasible solution has been found -> exit
+
+    '
+
+     if [[ $one_sat = 0 && "$text" = 'unsat' ]]; then
+        unsat=1 
+        break
+    fi
+
+
+     one_sat=1
+     case $text in
+        sat)   sat=1;;
+        unsat) sat=0;;
+        esac
+
+     if [ "$bound_difference" -eq 1 ]; then
+        middle=$l_bound
+     else
+      middle=$((u_bound - distance))
+     fi
+
+     if [ "$distance" -lt 1 ]; then
+        unsat=1
+     fi
+
+
+
+    if [[ $first -eq 1 ]]; then
+        if [[ $sat -eq 1 ]]; then
+            o_value=$(echo "$text" | sed 's/[^0-9]*//g')
+            u_bound=$o_value
+            bound_difference=$((u_bound - l_bound))
+            distance=$((bound_difference / 2))
+            middle=$((u_bound - distance))
+        else
+            l_bound=$middle
+            bound_difference=$((u_bound - l_bound))
+            distance=$((bound_difference / 2))
+            middle=$((u_bound - distance))
+            fi
+
+            assert_statement="(assert (<= $o_variable $middle))"
+            check_sat="(check-sat)"
+            get_value="(get-value ($o_variable))"
+
+            echo "$assert_statement" >> "$file"
+            echo "$check_sat" >> "$file"
+            echo "$get_value" >> "$file"
+
+            
+  else
+   first=1
+
+        if [[ $sat -eq 0 ]]; then
+            sed -i '$ d' $file
+        fi
+        sed -i '$ d' $file
+        sed -i '$ d' $file
+
+  fi
+
+ done < <("${solver[@]}" <"$file")
+
+   if [ $unsat = 1 ]; then
+    break;
+    fi
+
+done 
+
+
+   
+
+if [[ $one_sat -eq 1 ]]; then
+    sed -i '$ d' $file 
+    sed -i '$ d' $file 
+    sed -i '$ d' $file 
+    echo $o_value
+    for ((i=0; i<couriers; i++)); do
+    for ((j=0; j<packages; j++)); do
+          declare_fun="(declare-fun path${i}_${j} () Int)"
+          assert_equal="(assert (= (select asg${i} ${j}) path${i}_${j}))"
+
+            echo "$declare_fun" >> "$file"
+            echo "$assert_equal" >> "$file"
+           
+           done 
+    done
+    echo "(check-sat)" >> $file
+
+    for ((i=0; i<couriers; i++)); do
+    for ((j=0; j<packages; j++)); do
+        echo "(get-value (path$i"_"$j))">> $file
+    done
+    done
+     while read text; do
+  	if [[ $text != 'sat' ]]; then
+	    echo $text  
+  	fi
+  
+    done < <("${solver[@]}" <"$file")
+else
+    if [ "$text" == 'unsat' ]; then
+    echo '======== UNSAT ======='
+  else
+    echo '====== UNKNOWN ======='
+  fi
+
+
+fi
+
+
+        
+  
 
 rm pkill sleep 2>/dev/null
-

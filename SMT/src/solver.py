@@ -239,7 +239,7 @@ class SMTsolver:
         
         couriers_loads = [Int(f'loads{i}') for i in range(m)]
         m_dist = [Int(f"dist{i}") for i in range(m)]
-        x = [Array(f"asg{i}", IntSort(), IntSort()) for i in range(m)]
+        x = [Array(f"x{i}", IntSort(), IntSort()) for i in range(m)]
 
         # maximum = Int(f"max")
         
@@ -255,8 +255,8 @@ class SMTsolver:
         
         # define the domain for m_dist
         for k in range(m):
-                self.solver.add(m_dist[k] >= d_low_bound)
-                self.solver.add(m_dist[k] <= up_bound)
+                self.solver.add(m_dist[k] >= int(d_low_bound))
+                self.solver.add(m_dist[k] <= int(up_bound))
 
         # If I go back to the deposit, I'll be in the deposit in all sequent time steps
         for k in range(m):
@@ -274,7 +274,7 @@ class SMTsolver:
             self.solver.add(couriers_loads[k] == Sum([If(x[k][i] == c, s[c-1], 0) for i in range(n+1) for c in range(1,n+1)])) 
 
         for k in range(m):
-            self.solver.add(couriers_loads[k] <= l[k])
+            self.solver.add(couriers_loads[k] <= int(l[k]))
 
 
         # Compute the distances
@@ -316,8 +316,8 @@ class SMTsolver:
                     self.solver.add(x[k][i] <= n+1)
 
         # define the domain of rho
-        self.solver.add(rho >= low_bound)
-        self.solver.add(rho <= up_bound)
+        self.solver.add(rho >= int(low_bound))
+        self.solver.add(rho <= int(up_bound))
 
         # # define the domain for m_dist
         # for k in range(m):
@@ -329,10 +329,13 @@ class SMTsolver:
         #         self.solver.add(rho >= m_dist[k])
 
         # dopo lo zero son tutti zeri
-        for k in range(m):
-                for i in range(n+1):
-                    self.solver.add(Implies(x[k][i] == n+1, And([x[k][j] == n+1 for j in range(i+1, n+1)])))
 
+            
+        for k in range(m):
+                    for i in range(n+1):
+                        for j in range(i+1, n+1):
+                            self.solver.add(Implies(x[k][i] == n+1, And([x[k][j] == n+1 ])))
+                
 
         # Each item must be visited exactly once
         for j in range(1,n + 1):
@@ -347,7 +350,7 @@ class SMTsolver:
         
         #SImmetry breaking constraint
         for k in range(m):
-                self.solver.add(couriers_loads[k] <= l[k])
+                self.solver.add(couriers_loads[k] <= int(l[k]))
 
         for k in range(m):
             self.solver.add(x[k][0] != n+1)
