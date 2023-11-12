@@ -1,3 +1,4 @@
 res/
-__pycace__/
-*__pycace__/
+__pycache__/
+*__pycache__/
+*instances_smtlib/

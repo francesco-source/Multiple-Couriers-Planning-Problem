@@ -2,8 +2,6 @@ from pulp import *
 import numpy as np
 from utils import *
 import time as t
-import signal
-import highspy
 from MIP.src.mip_utils import *
 from constants import *
 import copy
