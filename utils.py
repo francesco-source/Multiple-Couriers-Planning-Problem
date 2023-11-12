@@ -3,87 +3,86 @@ import os
 import json
 
 class Instance:
-    def __init__(self, m, n, l, s, D):
-        self.m = m
-        self.n = n
-        self.l = l
-        self.s = s
-        self.D = np.array(D)
-        self.ratio_courier_loads = np.max(l)//np.min(l)
-        self.courier_dist_lb = self.set_d_low_bound()
-        self.courier_dist_ub = self.set_d_up_bound()
-        self.rho_low_bound = self.set_rho_lower_bound()
-        self.courier_min_load, self. courier_max_load = self.set_min_max_loads()
-        self.correspondences = None
-        self.corr_inverse = None
-        self.courier_sort_dict = None
+  def __init__(self, m, n, l, s, D):
+      self.m = m
+      self.n = n
+      self.l = l
+      self.s = s
+      self.D = np.array(D)
+      self.ratio_courier_loads = np.max(l)//np.min(l)
+      self.courier_dist_lb = self.set_d_low_bound()
+      self.rho_low_bound = self.set_rho_low_bound()
+      self.courier_dist_ub = self.set_d_up_bound()
+      self.courier_min_load, self. courier_max_load = self.set_min_max_loads()
+      self.correspondences = None
+      self.corr_inverse = None
+      self.courier_sort_dict = None
 
-    def set_rho_lower_bound(self):  
-        last_row = self.D[-1]
-        last_column = self.D[:,-1]
-        value1 = last_column[np.argmax(last_row)] + max(last_row)
-        value2 = last_row[np.argmax(last_column)] + max(last_column)
-        lb = max(value1, value2)
-        return lb  
-    
-    def set_d_low_bound(self):  
-        last_row = self.D[-1]
-        last_column = self.D[:,-1]
-        last_column = last_column[last_column != 0]
-        last_row = last_row[last_row !=0]
-        value1 = last_column[np.argmin(last_row)] + min(last_row)
-        value2 = last_row[np.argmin(last_column)] + min(last_column)
-        d_low_bound = max(value1, value2)
-        #print("Distance low bound: ", d_low_bound)
-        return d_low_bound
-    
-    def set_d_up_bound(self):
-       up_bound = np.max(self.D)*self.n //self.m + np.max(np.array(self.D)[:,-1])
-       return up_bound
-    
-    def set_min_max_loads(self):
-      min_l = np.min(self.s)
-      max_l = np.max(self.l)
-      return min_l, max_l
-    
-        
-    def sort_l(self, reverse=False):
-        arr = np.array(self.l)
-        if reverse:
-            sorted_indices = np.argsort(-arr)  # Use negative values for reverse sorting
-        else:
-            sorted_indices = np.argsort(arr)
-        sorted_list = arr[sorted_indices]
-        ordered_dict = {}
-        for i in range(len(arr)):
-            ordered_dict[i] = sorted_indices[i]
-        return list(sorted_list), ordered_dict
-    
+  def set_rho_low_bound(self):  
+      last_row = self.D[-1]
+      last_column = self.D[:,-1]
+      value1 = last_column[np.argmax(last_row)] + max(last_row)
+      value2 = last_row[np.argmax(last_column)] + max(last_column)
+      lb = max(value1, value2)
+      return lb  
+  
+  def set_d_low_bound(self):  
+      last_row = self.D[-1]
+      last_column = self.D[:,-1]
+      last_column = last_column[last_column != 0]
+      last_row = last_row[last_row !=0]
+      value1 = last_column[np.argmin(last_row)] + min(last_row)
+      value2 = last_row[np.argmin(last_column)] + min(last_column)
+      d_low_bound = max(value1, value2)
+      return d_low_bound
+  
+  
+  def set_d_up_bound(self):
+    _, n, _, _, D = self.unpack()
+              # dep->0    i->i+1 from 0 to n-1              n-1->dep
+    up_bound = D[n,0] + np.sum(D[0: n-1, 1: n].diagonal()) + D[n-1, n]    
+    return up_bound
 
 
-    def preprocess_instance(self):
-        self.correspondences = np.argsort(self.l)[::-1]
-        transformation_function = sorted(zip(self.correspondences, np.arange(self.m)))
-        self.corr_inverse = np.fromiter((x for _, x in transformation_function), dtype= int)
-
-        self.l, self.courier_sort_dict = self.sort_l(reverse=True)
-
+  def set_min_max_loads(self):
+    min_l = np.min(self.s)
+    max_l = np.max(self.l)
+    return min_l, max_l
+  
       
-      
-    def post_process_instance(self,  distances = [], solution = [[]]):
-    
-        true_order_distaces = list(distances)
-        true_order_solution = list(solution)
-        for start, end in self.courier_sort_dict.items():
-              true_order_solution[end] = solution[start]
-              true_order_distaces[end] = distances[start]
- 
-        return true_order_distaces, true_order_solution
+  def sort_l(self, reverse=False):
+    arr = np.array(self.l)
+    if reverse:
+      sorted_indices = np.argsort(-arr)  # Use negative values for reverse sorting
+    else:
+      sorted_indices = np.argsort(arr)
+    sorted_list = arr[sorted_indices]
+    ordered_dict = {}
+    for i in range(len(arr)):
+      ordered_dict[i] = sorted_indices[i]
+    return list(sorted_list), ordered_dict
+
+  def preprocess_instance(self):
+    self.correspondences = np.argsort(self.l)[::-1]
+    transformation_function = sorted(zip(self.correspondences, np.arange(self.m)))
+    self.corr_inverse = np.fromiter((x for _, x in transformation_function), dtype= int)
+
+    self.l, self.courier_sort_dict = self.sort_l(reverse=True)
+
+  def post_process_instance(self,  distances = [], solution = [[]]):
+    true_order_distaces = list(distances)
+    true_order_solution = list(solution)
+    for start, end in self.courier_sort_dict.items():
+      true_order_solution[end] = solution[start]
+      true_order_distaces[end] = distances[start]
+
+    return true_order_distaces, true_order_solution
 
 
-    def unpack(self):
-      return self.m, self.n, self.s, self.l, self.D
-        
+  def unpack(self):
+    return self.m, self.n, self.s, self.l, self.D
+
+
 def load_instance(path: str, num: int, preprocessing: bool = True):
   if num < 10:
     num = "0"+str(num)
@@ -122,10 +121,6 @@ def load_data(path: str, num):
   
 def save_file(path, filename, json_dict):
   if not os.path.exists(path):
-      os.makedirs(path)
-      
-  with open(path + filename, 'w') as file:
-      json.dump(json_dict, file)
       os.makedirs(path)
       
   with open(path + filename, 'w') as file:
