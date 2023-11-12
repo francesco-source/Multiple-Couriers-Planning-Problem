@@ -124,9 +124,6 @@ def save_file(path, filename, json_dict):
   if not os.path.exists(path):
       os.makedirs(path)
       
-  with open(path + filename, 'w') as file:
-      json.dump(json_dict, file)
-      os.makedirs(path)
       
-  with open(path + filename, 'w') as file:
+  with open(os.path.join(path, filename), 'w') as file:
       json.dump(json_dict, file)
