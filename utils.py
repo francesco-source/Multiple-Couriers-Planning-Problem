@@ -39,7 +39,6 @@ class Instance:
     value1 = last_column[np.argmin(last_row)] + min(last_row)
     value2 = last_row[np.argmin(last_column)] + min(last_column)
     d_low_bound = min(value1, value2)
-    print(d_low_bound)
     return d_low_bound
   
   def set_d_up_bound(self):
