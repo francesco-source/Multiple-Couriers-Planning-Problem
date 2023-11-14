@@ -30,7 +30,7 @@ class SATsolver:
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
             for strategy, stratstr in STRATEGIES_DICT.items():
-                for sym, symstr in SYM_DICT.items():
+                for sym, symstr in SYM_DICT_SAT.items():
                     self.set_solver()
                     
                     variables = self.set_constraints(instance, strategy)
@@ -38,9 +38,16 @@ class SATsolver:
                     if sym == SYMMETRY_BREAKING:
                         self.add_sb_constraints(instance, variables)
 
+                    if sym == HEURISTICS:
+                        self.add_heu_constraints(instance, variables)
+
                     time, optimal, obj, sol = self.optimize(instance, strategy, variables)
                     
-                    print(f"Max distance found using {stratstr} search{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '}: {obj}")
+                    print(f"Max distance found using {stratstr} search", end= "")
+                    if sym==NO_SYMMETRY_BREAKING: print(' :      ', end= "")
+                    elif sym==SYMMETRY_BREAKING:  print('  w sb: ', end= "")
+                    else:                         print(' no heu:', end= "")
+                    print(obj)
                     
                     key_dict = stratstr + symstr
                     json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": sol}
@@ -258,7 +265,7 @@ class SATsolver:
                         sol.append(k)
             tot_s.append(sol)
 
-        distances,tot_s = instance.post_process_instance(distances,tot_s)
+        distances,tot_s = instance.post_process_instance(distances, tot_s)
         
         if self.mode == 'v':
             print("Time from beginning of the computation:", np.round(past_time, 2), "seconds")
@@ -363,11 +370,6 @@ class SATsolver:
         elif strategy == BINARY_SEARCH:
             self.solver.add(maximum(D_tot,rho))
 
-        # search heuristics: only the first couriers (those with the most size) carry the most items
-        for i in range(m-1):
-            for j in range(n):
-                self.solver.add(Implies(X[i][j][0], X[i+1][j][0]))
-
         self.solver.push()
 
         return rho, X, D_tot, W_tot
@@ -377,7 +379,7 @@ class SATsolver:
         """
             Inserts the additional symmetry breaking constraints to the solver and pushes them
         """
-        m, n, s, l, D = instance.unpack()
+        m, _, _, l, _ = instance.unpack()
         _, X, _, W_tot = variables
         # lexicographic ordering between the paths of two couriers with same load capacity
         # se un corriere ha più capacity lo forziamo a depositare più carico
@@ -386,3 +388,19 @@ class SATsolver:
                 self.solver.add(ohe_less(X[i][0], X[i+1][0]))
             else: # l[i] > l[i+1]
                 self.solver.add(lesseq(W_tot[i+1], W_tot[i]))
+
+        self.solver.push()
+
+    def add_heu_constraints(self, instance, variables):
+        """
+            Inserts additional heuristic constraints to the solver and pushes them
+        """
+        m, n, _, _, _ = instance.unpack()
+        _, X, _, _ = variables
+
+        # only the first couriers (those with the most capacity) carry the most items
+        for i in range(m - 1):
+            for j in range(n):
+                self.solver.add(Implies(X[i][j][0], X[i+1][j][0]))
+        
+        self.solver.push()

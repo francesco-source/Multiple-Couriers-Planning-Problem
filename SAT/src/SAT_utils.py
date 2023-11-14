@@ -4,8 +4,6 @@ import math
 import numpy as np
 
 
-## MANIPULATE NUMBERS
-
 def toBinary(num, length = None, dtype = int):
   """
       Encodes a number in binary form in the desired type
@@ -28,8 +26,6 @@ def toInteger(bool_list):
   binary_string = ''.join('1' if b else '0' for b in bool_list)
   return int(binary_string, 2)
 
-
-## SIMPLER CONSTRAINT ENCODINGS
 
 def at_least_one(bool_vars):
   return Or(bool_vars)
@@ -63,7 +59,7 @@ def lesseq(a, b):
 
 def ohe_less(a, b):
   """
-      The constraint a < b whose inputs are in binary encoding
+      The constraint a < b whose inputs are in one-hot encoding
       :param a: 
       :param b:
   """
