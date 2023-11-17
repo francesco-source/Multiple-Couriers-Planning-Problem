@@ -1,12 +1,6 @@
 SYMMETRY_BREAKING = 0
 NO_SYMMETRY_BREAKING = 1
 # SYM_DICT = { NO_SYMMETRY_BREAKING: "", SYMMETRY_BREAKING: "_symbreak"}
-SYM_DICT = { NO_SYMMETRY_BREAKING: ""}
-NO_MAX_N_PACKS = 0
-MAX_N_PACKS = 1
-DICT_N_PACKS = {NO_MAX_N_PACKS : "max_n_packs = (n - m + 1)"}
-                #MAX_N_PACKS : "max_n_packs = n/m + n - m*(n/m)"}
-#SYM_DICT = { SYMMETRY_BREAKING: "_symbreak"}
 SYM_DICT = {NO_SYMMETRY_BREAKING: "",}
 
 # CP
@@ -14,9 +8,9 @@ CHUFFED = 0
 GECODE = 1
 HIGHS = 2
 LCG = 3
-SOLVERS_CP = {CHUFFED:'chuffed', GECODE:'gecode', HIGHS: "highs", LCG: "lcg"}
-# SOLVERS_CP = {CHUFFED:'chuffed'}
-# SOLVERS_CP = { GECODE:'gecode'}
+GECODE_HEU = 4
+SOLVERS_CP = {CHUFFED:'chuffed', GECODE:'gecode', HIGHS: "highs", LCG: "lcg",GECODE_HEU: "gecode_heu"}
+
 
 # SAT & SMT
 LINEAR_SEARCH = 0
