@@ -29,7 +29,7 @@ def main():
                         help="Directory where the output will be saved", 
                         default="./res", type= str)
 
-    parser.add_argument("-t", "--timeout", help="Timeout in seconds", default=270, type= int)
+    parser.add_argument("-t", "--timeout", help="Timeout in seconds", default=300, type= int)
 
 
     args = parser.parse_args()
@@ -90,6 +90,10 @@ def main():
 
     print("Solving with", args.approach)
     solver.solve()
+
+
+if __name__ == '__main__':
+    main()
 
 
 if __name__ == '__main__':
