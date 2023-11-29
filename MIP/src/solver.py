@@ -18,29 +18,34 @@ class MIPsolver:
 
 
     def set_solver(self,name = f"solve_instance",sense = LpMinimize):
+        '''
+        Defines solver and Lp problem 
+        '''
         self.solver = LpProblem(name = name, sense = sense)
 
     
     def solve(self):
+        """
+            Runs the solver and saves the results:
+                - for each data instance
+                - for each solving strategy option
+        """
         path = self.output_dir + "/MIP/"
         for num, instance in self.data.items():
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
             for strategy, stratstr in STRATEGIES_MIP_DICT.items():
                 for sym , symstr in SYM_DICT.items():
-                    self.set_solver()
                     
+                    self.set_solver()
                     variables = self.model1(instance)
                     
                     if sym == SYMMETRY_BREAKING:
                         self.add_sb_constraint(instance,variables)
-                        
-
-                    time, optimal, obj,res = self.optimize(instance,strategy,variables)
                     
+                    time, optimal, obj,res = self.optimize(instance,strategy,variables)
                     self.print_obj_dist(obj,sym,stratstr)
 
-                    # create the optimize function in order to  obtain everything you whan
                     key_dict =  stratstr
                     json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": res}
                     if self.mode == 'v':
@@ -56,21 +61,35 @@ class MIPsolver:
 
     
     def optimize(self,instance,strategy,variables):
+        """
+            Calls the search functions depending on the strategy selected.
+            :return
+                time: time needed to solve the instance
+                optimal: True if the solution is optimal
+                obj: objective function of the best solution found
+                sol: list of the paths of each courier in the best solution
+        """
         return self.search(instance,variables,strategy)
+    
 
 
-    def search(self,instance,variables,strategy,sub_tour_elimination = "DKJ"):
-
+    def search(self,instance,variables,strategy,sub_tour_elimination = "MTZ_B"):
+        """
+            Runs the  search with the specified sub tour elimination formulutaions
+            :return
+                time: time needed to solve the instance
+                optimal: True if the solution is optimal
+                obj: objective function of the best solution found
+                sol: list of the paths of each courier in the best solution
+        """
         rho, X, _, dist_courier, _ = variables
-
         m,n, _,_, D = instance.unpack()
+
         if strategy == CBC:
             solver = PULP_CBC_CMD(timeLimit=self.timeout, msg=1)
         elif strategy == GLPK:
             solver = GLPK_CMD(timeLimit=self.timeout, msg=1)
-        elif strategy == HIGH:
-            solver = HiGHS_CMD(timeLimit=self.timeout,msg=1)
-
+        
         solver.msg = False
         self.solver.solutionTime = self.timeout
         start_time = t.time()
@@ -95,15 +114,17 @@ class MIPsolver:
 
                 route_plan = [self.get_plan(route[k]) 
                               for k in range(m)]
-
+                
+                #check if subtours are present
                 subtour_present = np.array([len(route_plan[k]) > 1 for k in range(m)]).any()
                 subtour = [[] for i in range(m)]
-                
+
+                # we add iteratively constraints to eliminate sub tours
                 while(subtour_present):
                     for k in range(m):
                         while len(route_plan[k]) > 1:  
                             for i in range(len(route_plan[k])):
-                                # for s in range(m):
+                                    #the sum of xijk in the sub tour has to be lower than the n. of places in the subtour
                                     self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][k] \
                                                     for j in range(len(route_plan[k][i]))) <=\
                                                                 len(route_plan[k][i]) - 1
@@ -188,6 +209,12 @@ class MIPsolver:
             return time, False, None , []
         
     def get_plan(self,r0):
+        """
+        Creates a list of paths from a list of transitions between nodes in a graph.
+
+        :param r0: List of tuples representing transitions between nodes.
+        :return: List of paths-> route.
+        """
         r=copy.copy(r0)
         route = []
         while len(r) != 0:
@@ -203,8 +230,13 @@ class MIPsolver:
             route.append(plan)
         return(route)
    
-    def model1(self,instance,strategy_sub_t = "MTZ"):
+    def model1(self,instance,strategy_sub_t = "MTZ_B"):
+        """
+        Defines the model and the constraints
+        
+        """
 
+       
         m,n,s,l,D = instance.unpack()  
 
         distance_lb = instance.courier_dist_lb
@@ -213,7 +245,7 @@ class MIPsolver:
 
         rho_lb = instance.rho_low_bound
 
-        #  has a value of 1 if the arc from node to node is in the optimal route and is driven by vehicle k
+        #  it's set to 1 if the arc from node i  to node j is in the optimal route and is driven by vehicle k
         X = [[[ LpVariable(name=f'X_{i}_{j}_{k}', lowBound=0, upBound=1, cat=LpBinary) 
                for k in range(m) ] for j in range(n + 1) ] for i in range(n + 1)]
         
@@ -235,7 +267,6 @@ class MIPsolver:
                 self.solver += lpSum([X[i][j][k] 
                                       for i in range(n + 1)]) == lpSum([X[j][i][k] 
                                                                                    for i in range(n + 1)])
-
 
         # #2 every node is entered once
         for j in range (n):
@@ -270,6 +301,7 @@ class MIPsolver:
         elif strategy_sub_t == "DKJ":
             Y = None 
                            
+
         ########################################################
 
         #3 every vehicles leaves the depot
@@ -297,12 +329,14 @@ class MIPsolver:
         return rho, X, Y, dist_courier, load_courier
 
     def add_sb_constraint(self,instance,variables):
+        """
+        Adds symmetry breaking constraints
         
+        """ 
         _ , X, _, _, load_courier = variables
         
         m, n, _, _, D = instance.unpack()
-        
-        # 
+         
         for k in range(m-1):
             self.solver += load_courier[k+1] <= load_courier[k]
         # if the distance matrix is symmetric, we have a reflection symmetry between any courier path and its inverse
@@ -315,56 +349,5 @@ class MIPsolver:
             
 
 
-    def add_constraint_2(self,instance):
-        m,n,s,l,D = instance.unpack()  
-        distance_lb = instance.courier_dist_lb
-        distance_ub = instance.courier_dist_ub
-        rho_lb = instance.rho_low_bound
-
-        # matrix m*n*n+1 where we have couriers, order and packages
-        X  = [[[LpVariable(name = f'X_{i}_{k}_{j}', lowBound = 0, upBound = 1, cat = LpBinary) 
-                for j in range(n+1)] for k in range(n)] for i in range(m)]
-
-        #distance made by each courier
-        dist_courier = [LpVariable(name = f'dist_cour{i}', cat = LpInteger,lowBound = distance_lb, upBound = distance_ub) 
-                        for i in range(m)]
-
-        rho = LpVariable(name=f'maximum', lowBound = rho_lb, upBound =distance_ub , cat = LpInteger)
-
-        #1. One hot encoding 
-        for i in range(m):
-            for k in range(n):
-                self.solver += lpSum([X[i][k][j]for j in range(n+1)]) == 1
-
-        #2. Each element only once in the cube
-        for j in range(n):
-            self.solver += lpSum([[X[i][k][j] for k in range(n)] for i in range(m)]) == 1
-
-        #3. Load size constraint ( migliora con LpAffineSumExpression)
-        for i in range(m):
-            self.solver += lpSum([s[j]*X[i][k][j] for j in range(n) for k in range(n)]) <= l[i]
-        
-        #4. Every courier must start.
-        self.solver += lpSum(X[i][0][n] for i in range(m)) == 0
-
-        #5. Constraint that if I see a 0, all the following element for a courier must be 0.
-        for i in range(m):
-            for k in range(n-1):
-                    self.solver += X[i][k][n] - X[i][k+1][n] <= 0 
-
-        # 6. Distances traveled by each courier
-        for i in range(m):
-            self.solver += dist_courier[i] == lpSum([[X[i][0][j] * D[n][j] for j in range(n)],[
-            lpDot([And(self.solver,X[i][j-1][k1],X[i][j][k2],f"{i}carries{k1}to{k2}in{j}") 
-                    for j in range(1,n) for k1 in range(n+1) for k2 in range(n+1) if k1!= k2]
-                    ,[D[k1][k2] for j in range(n-1) for k1 in range(n+1) for k2 in range(n+1) if k1 != k2])]])
-
-        #7. Goal function. We want to minimize the max distance.
-        for i in range(m):
-            self.solver += rho >= dist_courier[i] 
-            
-        self.solver += rho
-
-        return rho, X, dist_courier
-
+    
         

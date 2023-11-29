@@ -2,6 +2,7 @@ import minizinc as mzn
 from constants import *
 import datetime as t
 from utils import *
+import time as tempo
 
 class CPsolver:
     def __init__(self, data, output_dir, timeout=300, mode = 'v'):
@@ -11,6 +12,7 @@ class CPsolver:
         self.solver = None
         self.mode = mode
         self.solver_path = "./CP/src/"
+        self.total_time = tempo.time()
 
 
     def solve(self):
@@ -19,15 +21,23 @@ class CPsolver:
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
             for solver_const,solver_name in SOLVERS_CP.items():
-                self.solver = mzn.Solver.lookup(solver_name)
+                if solver_name != "gecode_heu":
+                    self.solver = mzn.Solver.lookup(solver_name)
+                else:
+                    self.solver = mzn.Solver.lookup("gecode")
                 for sym, symstr in SYM_DICT.items():
-                    for max_n_p , max_n_p_str in DICT_N_PACKS.items():
-                        model = mzn.Model(self.solver_path + "model" + symstr + ".mzn")
-
+                        model = mzn.Model(self.solver_path + "model_final" + ".mzn") ###
+                        if solver_const == GECODE_HEU:
+                            model = mzn.Model(self.solver_path + "model_final_heu" + ".mzn")
+                            
                         try:
+                            
                             mzn_instance = mzn.Instance(self.solver, model)
-                            print(f"Using: {max_n_p_str}")
-                            result = self.search(mcp_instance, mzn_instance,solver_const,max_n_p)
+                            start_time = tempo.time()
+                            result = self.search(mcp_instance, mzn_instance,solver_const)
+                            end_time = tempo.time()
+                            
+                            self.total_time = end_time - start_time 
                             
                             if result.status is mzn.Status.UNSATISFIABLE:
                                 output_dict = {
@@ -46,22 +56,21 @@ class CPsolver:
                                     }
                                 print(f"Insufficient time for {solver_name} solver to compute a solution")
                             else:
-                                assignments = result["x"]
+                                optimal_path = result["path"] 
                                 obj = result["rho"]
-                                distances = result["m_dist"]
-
-                                if result.status is mzn.Status.OPTIMAL_SOLUTION:
+                                distances = result["incremental_dist"] [mcp_instance.m + mcp_instance.n:]
+                                if self.total_time < self.timeout:
+                                    
                                     optimal = True
-                                    time = result.statistics['solveTime'].total_seconds()
+                                    time = result.statistics['solveTime'].total_seconds() 
                                 else:
                                     optimal = False
                                     time = self.timeout
+                                    
 
-                                sol = [[x for x in sublist if x != mcp_instance.n+1] for sublist in assignments]
-                                
+                                sol = self.get_solution(mcp_instance, optimal_path)
+
                                 distances,sol = mcp_instance.post_process_instance(distances,sol)
-                                
-                                # postprocessing: sia sol sia distances vanno riordinate
 
                                 output_dict = {
                                     'time': int(time), 
@@ -72,12 +81,12 @@ class CPsolver:
                                 
                                 self.print_solution(sol, distances, time)
 
-                                key_dict = solver_name + symstr + max_n_p_str
+                                key_dict = solver_name + symstr 
                                 json_dict[key_dict] = output_dict
-                                
-                                print(f"Max distance found using: {solver_name} solver{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '}{obj}")
-                                
-                        ### non capisco perchè serva
+                                if solver_const == GECODE_HEU:
+                                    print(f"Max distance found using: {solver_name} solver with heu: {obj}")
+                                else:
+                                    print(f"Max distance found using: {solver_name} solver:      {obj}")
                         except Exception as e:
                             print("Exception:", e)
                             output_dict = {
@@ -95,42 +104,47 @@ class CPsolver:
             save_file(path, num + ".json", json_dict)
 
 
-    def search(self, mcp_instance, mzn_instance,solver_const,choose_max_n_pack = 0):
+    def search(self, mcp_instance, mzn_instance,solver_const):
         m, n, s, l, D = mcp_instance.unpack()
 
-        mzn_instance["courier"] = m
+        mzn_instance["couriers"] = m
         mzn_instance["items"] = n
-        mzn_instance["courier_size"] = l
+        mzn_instance["courier_capacity"] = l
         mzn_instance["item_size"] = s
         mzn_instance["distances"] = D
-        if choose_max_n_pack == 1: 
-
-            max_n_pack = int(int(n//m + n - m*(n // m))) 
-          
-        else:             
-            max_n_pack = n - m + 1
-        mzn_instance["packages"] = max_n_pack
-        mzn_instance["min_load"] = mcp_instance.courier_min_load
-        mzn_instance["max_load"] = mcp_instance.courier_max_load
+        
         mzn_instance["up_bound"] = mcp_instance.courier_dist_ub
         mzn_instance["low_bound"] = mcp_instance.rho_low_bound
-        mzn_instance["d_low_bound"] = mcp_instance.courier_dist_lb
-        mzn_instance["ratio_packages"] = mcp_instance.ratio_courier_loads
         
         if solver_const == CHUFFED:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                    random_seed=42)
-        elif solver_const == GECODE:
+        elif solver_const == GECODE or  solver_const == GECODE_HEU:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                   processes = 10, random_seed=42, free_search=True)
         elif solver_const == HIGHS:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                   processes = 10, random_seed=42)
         elif solver_const == LCG:
-                return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
+            return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                   random_seed=42)
+        
+        
             
     
+    def get_solution(self, inst, path):
+        sol = []
+        for i in range(inst.m):
+            i = path[inst.n + i]-1
+            i_path = []
+            while i < inst.n+1:
+                i_path.append(i+1)
+                i = path[i]-1
+            sol.append(i_path)
+        #print(path, sol, sep= "\n")
+        return sol
+
+
     def print_solution(self, sol, distances, time= None):
         if self.mode == 'v':
             if time:
@@ -144,3 +158,4 @@ class CPsolver:
             print("Distance travelled:")
             for i, dist in enumerate(distances):
                 print(f"Courier {i+1}: ", dist)
+
