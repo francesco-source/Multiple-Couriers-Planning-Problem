@@ -260,24 +260,30 @@ class SMTsolver:
             Adds constraints to the solver and pushes them
         """
         m, n, s, l, D = instance.unpack()
+        UPPER_BOUND = instance.courier_dist_ub
+        LOWER_BOUND = instance.rho_low_bound  
         
         couriers_loads = [Int(f'loads{i}') for i in range(m)]
         m_dist = [Int(f"dist{i}") for i in range(m)]
         x = [Array(f"asg{i}", IntSort(), IntSort()) for i in range(m)]
-        rho = Int("obj")
-        
+        rho = Int(f"max")      
+
         # define the domain of x
         for k in range(m):
             for i in range(n + 1):
                 self.solver.add(x[k][i] >= 1)
                 self.solver.add(x[k][i] <= n+1)
-        
-        
+
+        # define the domain of rho
+        self.solver.add(rho >= int(LOWER_BOUND))
+        self.solver.add(rho <= int(UPPER_BOUND))
+
         # If I go back to the deposit, I'll be in the deposit in all sequent time steps
         for k in range(m):
-            for i in range(n): #n+1
-                self.solver.add(Implies(x[k][i] == n+1, And([x[k][j] == n+1 for j in range(i+1, n+1)])))
-                
+                for i in range(n):
+                        for j in range(i+1, n+1):
+                            self.solver.add(Implies(x[k][i] == n+1, And([x[k][j] == n+1 ])))
+                 
         # Each item must be visited exactly once
         for j in range(1,n + 1):
             self.solver.add(exactly_one([x[k][i] == j for k in range(m) for i in range(n + 1)], f"A{j}"))
