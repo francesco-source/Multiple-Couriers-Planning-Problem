@@ -52,6 +52,8 @@ constraint forall(i in ITEMS)      (vehicle_route[prepath[i]] = vehicle_route[i]
 
 constraint bin_packing_capa(courier_capacity,[vehicle_route[i] | i in ITEMS],item_size);
 
+constraint forall(i in START_NODES where sym == 1)(path[i] <= prepath[i + couriers]);
+
 % calculate distance incrementally
 constraint forall(i in START_NODES)(incremental_dist[i] = 0);
 constraint forall(i in START_NODES)(incremental_dist[path[i]] = distances[items + 1, path[i]]);   % dep->path[i]

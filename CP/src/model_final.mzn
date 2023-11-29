@@ -7,6 +7,7 @@ array[ITEMS] of int: item_size; % size of each item, s
 array[1..items+1, 1..items+1] of int: distances; % distance matrix, d
 int: low_bound;
 int: up_bound;
+int: sym;
 
 set of int: COURIERS = 1..couriers;      % vehicles
 set of int: COURIERS_SYM = 1..couriers - 1;
@@ -66,6 +67,6 @@ solve :: seq_search([
                 %int_search(prepath,first_fail,indomain_min),
                 %relax_and_reconstruct(prepath,90),
                 %relax_and_reconstruct(path, 90),
-                restart_luby(items)
+                %restart_luby(items)
                 ])
                 minimize(rho)::domain;

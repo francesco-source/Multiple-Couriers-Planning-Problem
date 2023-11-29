@@ -52,21 +52,23 @@ constraint forall(i in ITEMS)      (vehicle_route[prepath[i]] = vehicle_route[i]
 
 constraint bin_packing_capa(courier_capacity,[vehicle_route[i] | i in ITEMS],item_size);
 
+constraint forall(i in START_NODES where sym == 1)(path[i] <= prepath[i + couriers]);
+
 % calculate distance incrementally
 constraint forall(i in START_NODES)(incremental_dist[i] = 0);
 constraint forall(i in START_NODES)(incremental_dist[path[i]] = distances[items + 1, path[i]]);   % dep->path[i]
 constraint forall(i in ITEMS)(incremental_dist[path[i]] = incremental_dist[i] + distances[i, min([path[i], items+1])]);
 
 var low_bound..up_bound: rho;
-constraint  rho = max(incremental_dist);
+constraint rho = max(incremental_dist);
 
 solve :: seq_search([
                 int_search(path, first_fail, indomain_split),
-                int_search(vehicle_route, first_fail, indomain_random),
+                int_search(vehicle_route, first_fail, indomain_split),
                 int_search(prepath,first_fail,indomain_split),
                 %int_search(prepath,first_fail,indomain_min),
-                %relax_and_reconstruct(vehicle_route, 95),
-                %restart_geometric(couriers,1)
-                %::restart_luby(10*(items+2*couriers))
+                %relax_and_reconstruct(prepath,90),
+                %relax_and_reconstruct(path, 90),
+                %restart_luby(items)
                 ])
-                minimize(rho)::relax_and_reconstruct(vehicle_route,90);
+                minimize(rho)::domain;
