@@ -26,10 +26,10 @@ class CPsolver:
                 else:
                     self.solver = mzn.Solver.lookup("gecode")
                 for sym, symstr in SYM_DICT.items():
-                        model = mzn.Model(self.solver_path + "model_final" + ".mzn") ###
+                        model = mzn.Model(self.solver_path + "model_final" + symstr + ".mzn") 
                         if solver_const == GECODE_HEU:
-                            model = mzn.Model(self.solver_path + "model_final_heu" + ".mzn")
-                            
+                            model = mzn.Model(self.solver_path + "model_final_heu" + symstr  + ".mzn")
+                          
                         try:
                             
                             mzn_instance = mzn.Instance(self.solver, model)
@@ -83,6 +83,8 @@ class CPsolver:
 
                                 key_dict = solver_name + symstr 
                                 json_dict[key_dict] = output_dict
+                                if sym == SYMMETRY_BREAKING: 
+                                    print("Distance obtained using symmetry breaking")
                                 if solver_const == GECODE_HEU:
                                     print(f"Max distance found using: {solver_name} solver with heu: {obj}")
                                 else:
@@ -112,7 +114,7 @@ class CPsolver:
         mzn_instance["courier_capacity"] = l
         mzn_instance["item_size"] = s
         mzn_instance["distances"] = D
-        
+        mzn_instance["sym"] = int(np.array_equal(D, D.T))
         mzn_instance["up_bound"] = mcp_instance.courier_dist_ub
         mzn_instance["low_bound"] = mcp_instance.rho_low_bound
         
