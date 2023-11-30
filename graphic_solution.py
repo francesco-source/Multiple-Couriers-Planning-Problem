@@ -27,7 +27,7 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    instance = load_instance(args.input_dir, args.num_instance, preprocessing= False)
+    instance = load_instance(args.input_dir, args.num_instance)
     m, n, _, _, D = instance.unpack()
 
     if args.approach == "cp":
@@ -60,11 +60,12 @@ def main():
     i_solver = 1
     plt.suptitle(f"Instance {args.num_instance} graphic solution with {args.approach}")
 
+    mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42, normalized_stress= "auto")
+    coordinates = mds.fit_transform(sym_matrix)
+    
     for solver, solver_result in inst_result.items():
         solution = solver_result["sol"]
 
-        mds = MDS(n_components=2, dissimilarity='precomputed', random_state=42)
-        coordinates = mds.fit_transform(sym_matrix)
 
         # The last point is the deposit. This is meant to be the origin of the frame of reference
         coordinates = coordinates - coordinates[-1]
@@ -72,34 +73,36 @@ def main():
         plt.subplot((1 + n_solvers) // 2, 2, i_solver)
         plt.scatter(coordinates[:-1, 0], coordinates[:-1, 1], c='b', s=40, marker='h')
         plt.scatter(coordinates[-1, 0], coordinates[-1, 1], c='black', s=100, marker='s')
-
+        
         for i_courier, courier_path in enumerate(solution):
-            plt.arrow(0, 0, coordinates[courier_path[0]-1, 0], coordinates[courier_path[0]-1, 1], 
-                      color= palette[i_courier], head_width = 0.1, length_includes_head= True)
+            if len(courier_path) > 0:
+                plt.arrow(0, 0, coordinates[courier_path[0]-1, 0], coordinates[courier_path[0]-1, 1], 
+                        color= palette[i_courier], head_width = 0.1, length_includes_head= True)
             
-            for i_item in range(len(courier_path)-1):
-                plt.arrow(x= coordinates[courier_path[i_item]-1, 0], 
-                          y= coordinates[courier_path[i_item]-1, 1], 
-                          dx= coordinates[courier_path[i_item+1]-1, 0] - coordinates[courier_path[i_item]-1, 0], 
-                          dy= coordinates[courier_path[i_item+1]-1, 1] - coordinates[courier_path[i_item]-1, 1], 
-                          color= palette[i_courier], head_width = 0.1, length_includes_head= True)
-                
-            plt.arrow(x= coordinates[courier_path[-1]-1, 0], 
-                      y= coordinates[courier_path[-1]-1, 1],
-                      dx= -coordinates[courier_path[-1]-1, 0], 
-                      dy= -coordinates[courier_path[-1]-1, 1], 
-                      color= palette[i_courier], head_width = 0.1, length_includes_head= True)
+                for i_item in range(len(courier_path)-1):
+                    plt.arrow(x= coordinates[courier_path[i_item]-1, 0], 
+                            y= coordinates[courier_path[i_item]-1, 1], 
+                            dx= coordinates[courier_path[i_item+1]-1, 0] - coordinates[courier_path[i_item]-1, 0], 
+                            dy= coordinates[courier_path[i_item+1]-1, 1] - coordinates[courier_path[i_item]-1, 1], 
+                            color= palette[i_courier], head_width = 0.1, length_includes_head= True)
+                    
+                plt.arrow(x= coordinates[courier_path[-1]-1, 0], 
+                        y= coordinates[courier_path[-1]-1, 1],
+                        dx= -coordinates[courier_path[-1]-1, 0], 
+                        dy= -coordinates[courier_path[-1]-1, 1], 
+                        color= palette[i_courier], head_width = 0.1, length_includes_head= True)
                 
         for i, coord in enumerate(coordinates[:-1]):
             plt.annotate(f'{i+1}', (coord[0], coord[1]))
         
-        plt.xlabel("X")
-        plt.ylabel("Y")
+        plt.xlabel("")
+        plt.ylabel("")
         plt.grid(True)
         plt.title(f"Solver: {solver}")
         i_solver += 1
     
-    
+    # plt.savefig(f"./images{apprstr}{args.num_instance}.jpg")
+    plt.savefig(f"{apprstr[1:-1]}{args.num_instance}.jpg")
     plt.show()
 
 
