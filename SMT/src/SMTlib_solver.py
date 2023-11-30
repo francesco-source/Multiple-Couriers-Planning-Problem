@@ -9,75 +9,79 @@ from constants import *
 class SMTLIBsolver(SMTsolver):
     
     def __init__(self,data,output_dir, timeout = 300, mode = "v"):
+        
         super().__init__(data,output_dir=output_dir,timeout = timeout, mode = mode)
-        self.set_solver()
-        self.instances_dir = "smt/src/instances_smtlib/"
-        os.makedirs(self.instances_dir, exist_ok=True) # creating the dir of smtlib file if exists
+        
+        self.instances_dir = "SMT/src/instances_smtlib/"
         self.output_dir = output_dir
         self.timeout = timeout
-        self.set_solver()
-        self.symmetry = None
         self.file = None
-    
+        self.symmetry = None
+       
+        os.makedirs(self.instances_dir, exist_ok=True) # creating the dir of smtlib file if exists
+        self.set_solver()
      
         
        
-    def create_file(self, instance, strategy = "linear"):
-        # smtlib instruction to suppress warning for using different solvers
-        self.set_solver() # setting the Solver to create the model
+    def make_smtlib(self, instance, strategy = LINEAR_SEARCH):
+        '''
+         Initializes the smtlib's file adding logic, constraints, and s-expression
+        '''
+        self.set_solver() 
         self.set_constraints(instance= instance, strategy= strategy)
-        to_write = "(set-logic ALL)\n" 
-        to_write += self.solver.sexpr()
-        with open(self.file, "w") as f:
-            f.write(to_write)
+        with open(self.file, "w") as file:
+            file.write("(set-logic ALL)\n" + self.solver.sexpr())
      
      
-    def set_command(self,instance, bash_file,solver):
+    def get_cli(self,instance, bash,solver):
+        '''
+        Returns the command line instructions to be run
+        '''
+       
         couriers, num_items, item_size, courier_size, distances = instance.unpack()
         courier_dist_ub = instance.courier_dist_ub
-        rho_low_bound = instance.rho_low_bound
-        courier_dist_lb = instance.courier_dist_lb
-        # execution of the bash file
-        path = os.path.join(os.getcwd(), bash_file) # path to execute the bash file
-        
-        command = f"timeout {self.timeout} bash {path} '{self.file}' 'max' '{courier_dist_ub}' '{rho_low_bound-1}' '{solver}' '{couriers}' '{num_items + 1}'"
-        return command
+        rho_low_bound = instance.rho_low_bound       
+        return f"timeout {self.timeout} bash {os.path.join(os.getcwd(), bash) } '{self.file}' 'max' '{courier_dist_ub}' '{rho_low_bound-1}' '{solver}' '{couriers}' '{num_items + 1}'"
     
                          
 
     
     def solve(self):
+        """
+            Runs the solver and saves the results:
+                - for each data instance
+                - for each solving strategy option
+                - for each symmetry breaking option
+        """
+        strategy = LINEAR_SEARCH
+        strategy_str = "linear"
+        sol_path = self.output_dir + "/SMTlib/" 
 
-        sol_path = self.output_dir + "/SMTlib/"
-        strategy = "linear"
         for num, instance in self.data.items():
-            json_dict = {}
             couriers, num_items, item_size, courier_size, distances = instance.unpack()
-
+            json_dict = {}
             filename = str(num) + ".json"
+           
             for solver, solverstr in SOLVERS_SMTlib.items():
-                print("File = ", num)
-                print("Solver used = ", solverstr)
-                print("Type search = ", strategy)
+                print("Solver - ", solverstr, " ", strategy_str, " search")
+                print("Instance - ", num)
+                
                 for sym, symstr in SYM_DICT.items():
-                    bash_file = "SMT/src/" + strategy + ".sh"
-                    self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2"
+
+                    bash = "SMT/src/" + strategy_str + ".sh"
+                    self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2" 
+                    self.make_smtlib(instance)
+                    cli = self.get_cli(instance, bash, solverstr)
                     
-                    self.create_file(instance)
-                    
-                    command = self.set_command(instance, bash_file, solverstr)
-                    
-                    print(command) # usciranno 20 camndi uno per istanza
-                        
+                    print(cli)
                     print("Starting Execution")
                     start_time = t.time()
+                    
                     try:
-                        result = subprocess.run(command, shell= True, capture_output= True, text= True)
+                        result = subprocess.run(cli, shell= True, capture_output= True, text= True)
                         time = t.time() - start_time
-                        
                         text = result.stdout
                         val, path = output_formatting(text, num_items + 1)
-        
 
                         out_dict = {
                                 'time': time,
@@ -86,6 +90,7 @@ class SMTLIBsolver(SMTsolver):
                                 'sol': path
                             }
                     except Exception as e:
+                        
                         print("The bash file cannot be executed:", e)
                         out_dict = {
                              'time': self.timeout,
