@@ -90,7 +90,7 @@ class CPsolver:
                                 else:
                                     print(f"Max distance found using: {solver_name} solver:      {obj}")
                         except Exception as e:
-                            print("Exception:", e)
+                            print("No solution")
                             output_dict = {
                                         'time': self.timeout,
                                         'optimal': False,
