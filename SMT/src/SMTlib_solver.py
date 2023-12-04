@@ -53,8 +53,8 @@ class SMTLIBsolver(SMTsolver):
                 - for each solving strategy option
                 - for each symmetry breaking option
         """
-        strategy = LINEAR_SEARCH
-        strategy_str = "linear"
+        strategy = BINARY_SEARCH
+        strategy_str = "binary"
         sol_path = self.output_dir + "/SMTlib/" 
 
         for num, instance in self.data.items():
@@ -72,25 +72,33 @@ class SMTLIBsolver(SMTsolver):
                     self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2" 
                     self.make_smtlib(instance)
                     cli = self.get_cli(instance, bash, solverstr)
-                    
                     print(cli)
                     print("Starting Execution")
                     start_time = t.time()
                     
                     try:
                         result = subprocess.run(cli, shell= True, capture_output= True, text= True)
-                        time = t.time() - start_time
+                        time = int(t.time() - start_time)
                         text = result.stdout
+                        print(result)
                         val, path = output_formatting(text, num_items + 1)
-
-                        out_dict = {
-                                'time': time,
-                                'optimal': True,
-                                'obj':  val,
-                                'sol': path
+                        if(val == ''):
+                            out_dict = {
+                            "time": self.timeout,
+                            "optimal": False,
+                            "obj": "n/a",
+                            "sol": []
                             }
-                    except Exception as e:
+                        else:
+                              out_dict = {
+                                "time": time,
+                                "optimal": True,
+                                "obj":  int(val),
+                                "sol": path
+                            }
                         
+                      
+                    except Exception as e:
                         print("The bash file cannot be executed:", e)
                         out_dict = {
                              'time': self.timeout,
@@ -99,10 +107,10 @@ class SMTLIBsolver(SMTsolver):
                              'sol': []
                          }
                         
-                    key_dict = solverstr + symstr
+                    key_dict = strategy_str + "_" + symstr
                     json_dict[key_dict] = out_dict
                     print(out_dict)
-                    save_file(sol_path, filename, out_dict)
+                    save_file(sol_path, filename, json_dict)
                     
         
 

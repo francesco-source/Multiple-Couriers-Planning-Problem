@@ -28,7 +28,7 @@ def output_formatting(text, n_items):
         res = []
     ord =  i.split()[1][:-2]
     if(ord != str(n_items)):
-        res.append(ord)
+        res.append(int(ord))
         counter = counter + 1
     else: 
         counter = 0
