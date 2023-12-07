@@ -44,11 +44,11 @@ It is recommended to run only instances for which a solution can be found.
 ## Graphic solution
 A graphic solution has been developed, and it can be run with the following command:
 
-<code>python3 graphic_solution.py -a smt -n 4</code>
+<code>python3 graphic_solution.py -a smt -n 6</code>
 
 This command supports the same arguments as above, except for "timeout" and "mode".
 #### Example
-![hi](4.jpg)
+![hi](6.jpg)
 
 ## Check solution
 The solution checker provided by the teachers can be run by the following command:
