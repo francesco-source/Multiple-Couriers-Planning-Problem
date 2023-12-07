@@ -25,9 +25,9 @@ SYM_DICT_SAT = { NO_SYMMETRY_BREAKING: "_no_sb", SYMMETRY_BREAKING: "_sb", HEURI
 
 # SMTlib
 CVC4 = 0
-CVC5 = 1
 #Z3 = 2
 SOLVERS_SMTlib = {CVC4 :"cvc4"}
+
 
 # MIP
 CBC = 0
