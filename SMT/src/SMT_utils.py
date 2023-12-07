@@ -20,6 +20,9 @@ def exactly_one(bool_vars, name):
 
 
 def output_formatting(text, n_items):
+  '''
+  return: objective values and couriers' path
+  '''
   val = text.split('\n')[0]
   out_ris = []
   counter = 0
@@ -28,7 +31,7 @@ def output_formatting(text, n_items):
         res = []
     ord =  i.split()[1][:-2]
     if(ord != str(n_items)):
-        res.append(ord)
+        res.append(int(ord))
         counter = counter + 1
     else: 
         counter = 0
@@ -38,3 +41,20 @@ def output_formatting(text, n_items):
 
             
   return val, out_ris  
+
+
+def get_distances_from_path(path, num_items, distances):
+  '''
+    reuturn: a list m_dist with the distance computed by each courier
+  '''
+  m_dist = []
+  for i in path:
+    dist = 0
+    prec = num_items
+    for j in i:
+      dist = dist + distances[prec][j - 1]
+      prec = j - 1
+    dist = dist +  distances[prec][num_items]
+    m_dist.append(dist)
+    
+  return m_dist

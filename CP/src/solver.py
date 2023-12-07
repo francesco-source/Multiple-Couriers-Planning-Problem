@@ -56,7 +56,7 @@ class CPsolver:
                                     }
                                 print(f"Insufficient time for {solver_name} solver to compute a solution")
                             else:
-                                optimal_path = result["path"] 
+                                optimal_path = result["successor"] 
                                 obj = result["rho"]
                                 distances = result["incremental_dist"] [mcp_instance.m + mcp_instance.n:]
                                 if self.total_time < self.timeout:
@@ -90,7 +90,7 @@ class CPsolver:
                                 else:
                                     print(f"Max distance found using: {solver_name} solver:      {obj}")
                         except Exception as e:
-                            print("Exception:", e)
+                            print("No solution")
                             output_dict = {
                                         'time': self.timeout,
                                         'optimal': False,

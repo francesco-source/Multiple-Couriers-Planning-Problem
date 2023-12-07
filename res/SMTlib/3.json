@@ -1,0 +1,1 @@
+{"cvc4_linear": {"time": 300, "optimal": false, "obj": "n/a", "sol": []}, "cvc4_binary": {"time": 230, "optimal": true, "obj": 12, "sol": [[5, 4, 2], [3, 6], [1, 7]]}}

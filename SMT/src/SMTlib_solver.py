@@ -51,59 +51,61 @@ class SMTLIBsolver(SMTsolver):
             Runs the solver and saves the results:
                 - for each data instance
                 - for each solving strategy option
-                - for each symmetry breaking option
+                
         """
-        strategy = LINEAR_SEARCH
-        strategy_str = "linear"
         sol_path = self.output_dir + "/SMTlib/" 
 
         for num, instance in self.data.items():
             couriers, num_items, item_size, courier_size, distances = instance.unpack()
             json_dict = {}
             filename = str(num) + ".json"
-           
-            for solver, solverstr in SOLVERS_SMTlib.items():
-                print("Solver - ", solverstr, " ", strategy_str, " search")
-                print("Instance - ", num)
-                
-                for sym, symstr in SYM_DICT.items():
-
+            for strategy, strategy_str in STRATEGIES_DICT.items():
+                for solver, solverstr in SOLVERS_SMTlib.items():
+                    print("Solver - ", solverstr, " ", strategy_str, " search")
+                    print("Instance - ", num)
                     bash = "SMT/src/" + strategy_str + ".sh"
                     self.file = self.instances_dir + str(num).removesuffix('.dat') + ".smt2" 
-                    self.make_smtlib(instance)
+                    self.make_smtlib(instance, strategy)
                     cli = self.get_cli(instance, bash, solverstr)
-                    
                     print(cli)
                     print("Starting Execution")
                     start_time = t.time()
-                    
+                        
                     try:
                         result = subprocess.run(cli, shell= True, capture_output= True, text= True)
-                        time = t.time() - start_time
+                        time = int(t.time() - start_time)
                         text = result.stdout
                         val, path = output_formatting(text, num_items + 1)
 
-                        out_dict = {
-                                'time': time,
-                                'optimal': True,
-                                'obj':  val,
-                                'sol': path
-                            }
-                    except Exception as e:
+                            
+                        if(val == ''):
+                            raise ValueError("NaN Objective variable")
+                        else:
+                            #post processing 
+                            m_dist = get_distances_from_path(path,num_items,distances)
+                            m_dist, path = instance.post_process_instance(m_dist,path)
+                            out_dict = {
+                                    "time": time,
+                                    "optimal": True,
+                                    "obj":  int(val),
+                                    "sol": path
+                                }
+                            
                         
+                    except Exception as e:
                         print("The bash file cannot be executed:", e)
                         out_dict = {
-                             'time': self.timeout,
-                             'optimal': False,
-                             'obj': "n/a",
-                             'sol': []
-                         }
-                        
-                    key_dict = solverstr + symstr
+                                'time': self.timeout,
+                                'optimal': False,
+                                'obj': "n/a",
+                                'sol': []
+                            }
+                            
+                    key_dict = solverstr + "_" + strategy_str
                     json_dict[key_dict] = out_dict
                     print(out_dict)
-                    save_file(sol_path, filename, out_dict)
-                    
+                    save_file(sol_path, filename, json_dict)
+                        
         
 
 

@@ -35,45 +35,33 @@ class MIPsolver:
             json_dict = {}
             print(f"=================INSTANCE {num}=================")
             for strategy, stratstr in STRATEGIES_MIP_DICT.items():
-                for sym , symstr in SYM_DICT.items():
+                for sym , symstr in SYM_DICT_MIP.items():
+                    for sub_tour_k, sub_tour_v in SUB_TOURS_MIP_DICT.items():  
                     
-                    self.set_solver()
-                    variables = self.model1(instance)
-                    
-                    if sym == SYMMETRY_BREAKING:
-                        self.add_sb_constraint(instance,variables)
-                    
-                    time, optimal, obj,res = self.optimize(instance,strategy,variables)
-                    self.print_obj_dist(obj,sym,stratstr)
+                        self.set_solver()
+                        
+                        variables = self.model1(instance,sub_tour_v)
+                        if sym == SYMMETRY_BREAKING:
+                         self.add_sb_constraint(instance,variables)
+                        time, optimal, obj,res = self.search(instance,variables,strategy,sub_tour_v)
+                        self.print_obj_dist(obj,sym,stratstr,sub_tour_v)
 
-                    key_dict =  stratstr
-                    json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": res}
+                        key_dict =  stratstr + sub_tour_v
+                        json_dict[key_dict] = {"time" : time, "optimal": optimal, "obj": obj, "sol": res}
+                        if self.mode == 'v':
+                            print()
                     if self.mode == 'v':
                         print()
-                if self.mode == 'v':
-                    print()
             print()          
 
             save_file(path, num + ".json", json_dict)
 
-    def print_obj_dist(self,obj,sym,strastr):
-        print(f"Max distance found using {strastr} solver{':      ' if sym==NO_SYMMETRY_BREAKING else ' w sb: '} {obj}")
-
-    
-    def optimize(self,instance,strategy,variables):
-        """
-            Calls the search functions depending on the strategy selected.
-            :return
-                time: time needed to solve the instance
-                optimal: True if the solution is optimal
-                obj: objective function of the best solution found
-                sol: list of the paths of each courier in the best solution
-        """
-        return self.search(instance,variables,strategy)
-    
+    def print_obj_dist(self,obj,sym,strastr,sub_t = "_mtz"):
+        print(f"Max distance found using {strastr} solver,{' without sb :' if sym==NO_SYMMETRY_BREAKING else ''} {obj}")
+        print("subtour elimination used = ", sub_t)
 
 
-    def search(self,instance,variables,strategy,sub_tour_elimination = "MTZ_B"):
+    def search(self,instance,variables,strategy,sub_tour_elimination = "_mtz"):
         """
             Runs the  search with the specified sub tour elimination formulutaions
             :return
@@ -86,9 +74,9 @@ class MIPsolver:
         m,n, _,_, D = instance.unpack()
 
         if strategy == CBC:
-            solver = PULP_CBC_CMD(timeLimit=self.timeout, msg=1)
+            solver = PULP_CBC_CMD(timeLimit=self.timeout - 10, msg=1)
         elif strategy == GLPK:
-            solver = GLPK_CMD(timeLimit=self.timeout, msg=1)
+            solver = GLPK_CMD(timeLimit=self.timeout - 10, msg=1)
         
         solver.msg = False
         self.solver.solutionTime = self.timeout
@@ -98,14 +86,10 @@ class MIPsolver:
             pass
 
         try:
+            
             self.solver.solve(solver)
-            end_time = t.time()
-            interval = end_time - start_time
-
-            if sub_tour_elimination != "DKJ":
-                print("Time interval needed to solve the model: ", interval)
-
-            elif sub_tour_elimination == "DKJ" :
+            
+            if sub_tour_elimination == "_DFJ" :
                 route = [[] for i in range(m)]
                 
                 for k in range(m):
@@ -118,8 +102,11 @@ class MIPsolver:
                 #check if subtours are present
                 subtour_present = np.array([len(route_plan[k]) > 1 for k in range(m)]).any()
                 subtour = [[] for i in range(m)]
-
+                solver_time = int(t.time() - start_time)
                 # we add iteratively constraints to eliminate sub tours
+                if solver_time >= 300:
+                    return  300, False, None , []
+                
                 while(subtour_present):
                     for k in range(m):
                         while len(route_plan[k]) > 1:  
@@ -128,8 +115,19 @@ class MIPsolver:
                                     self.solver += lpSum(X[route_plan[k][i][j][0]][route_plan[k][i][j][1]][k] \
                                                     for j in range(len(route_plan[k][i]))) <=\
                                                                 len(route_plan[k][i]) - 1
-                                                            
-                            self.solver.solve(solver)
+                            
+                            if solver_time <= self.timeout:                             
+                                self.solver.solve(solver)
+                            
+                            solver_time = int(t.time() - start_time)
+                            
+                            if solver_time >= self.timeout:
+                                return  self.timeout, False, None , []
+                            
+                            remaining_time = self.timeout - int(t.time() - start_time)
+                            solver.timelimit = remaining_time
+                            
+                                
                             for s in range(m):
                                 route[s] = [(i, j) for i in range(n+1) \
                                             for j in range(n+1) 
@@ -141,10 +139,16 @@ class MIPsolver:
 
                     subtour_present = np.array([len(route_plan[k]) > 1 for k in range(m)]).any()
        
-            optimal = True
-
             # time = int(self.solver.solutionTime)
-            time = int(t.time() - start_time)
+            time = np.round(t.time() - start_time,2)
+            
+            
+            if time < self.timeout:
+                optimal = True
+            else:
+                optimal = False
+            
+            
             
             obj = int(rho.varValue)
             
@@ -202,11 +206,10 @@ class MIPsolver:
             
             result = [[x + 1 for x in sublist if x != n] for sublist in result]
             
-            return time , optimal, obj, result
+            return int(self.solver.solutionTime) , optimal, obj, result
         
         except ElementNotFoundException as e:
-            print(e)
-            return time, False, None , []
+            return int(self.timeout), False, None , []
         
     def get_plan(self,r0):
         """
@@ -230,7 +233,7 @@ class MIPsolver:
             route.append(plan)
         return(route)
    
-    def model1(self,instance,strategy_sub_t = "MTZ_B"):
+    def model1(self,instance,strategy_sub_t = "_mtz"):
         """
         Defines the model and the constraints
         
@@ -280,7 +283,7 @@ class MIPsolver:
 
         #######################################################
         # subtour elimination
-        if strategy_sub_t == "MTZ":
+        if strategy_sub_t == "_time_order":
             Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) 
                   for i in range(n)] for k in range(m)]
             
@@ -289,7 +292,7 @@ class MIPsolver:
                     for i in range(n):
                          self.solver += X[i][j][k]*(n-1) + Y[k][j] - Y[k][i]  <= n-2
                      
-        elif strategy_sub_t == "MTZ_B":
+        elif strategy_sub_t == "_mtz":
             Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) 
                   for i in range(n)] for k in range(m)]
             
@@ -298,7 +301,7 @@ class MIPsolver:
                     for j in range(n):
                         if i!=j :
                             self.solver += Y[k][j]>= Y[k][i] +1 - (2*n)*(1-X[i][j][k])
-        elif strategy_sub_t == "DKJ":
+        elif strategy_sub_t == "_DFJ":
             Y = None 
                            
 
