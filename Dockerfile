@@ -1,6 +1,6 @@
 FROM minizinc/minizinc:latest
 
-WORKDIR C:\Users\utente\Videos\Final_Project\CDMO
+WORKDIR ./CDMO_Proj_Pivi_Fusconi_Oshodi_Marzi
 
 COPY . .
 
@@ -20,4 +20,4 @@ RUN dos2unix SMT/src/binary.sh \
 
 
 
-CMD python3 main.py -a smtlib -n 1
+CMD  python3 main.py -a cp -n 0  && python3 main.py -a sat -n 6 && python3 main.py -a smt -n 7 && python3 main.py -a smtlib -n 1 && python3 main.py -a lp -n 4

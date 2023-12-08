@@ -318,6 +318,10 @@ class SATsolver:
         for i in range(m):
             for j in range(n-1):
                 self.solver.add(Implies(X[i][j][0], X[i][j+1][0]))
+        
+        # all start
+        for i in range(m):
+            self.solver.add(at_least_one([X[i][0][k] for k in range(1,n+1)]))
 
         # each courier can only deliver items whose total size doesn't exceed limit
         W_par = [[[Bool(f"partial_weight_{i}_{k}_{b}") for b in range(maxWeightBin)] for k in range(n)] for i in range(m)]
