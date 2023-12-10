@@ -30,7 +30,7 @@ Run with python the ```main.py``` file with the following optional arguments:
 | `-t, --timeout` | Sets the timeout (s, default: 300)                                       |
 | `-m, --mode`                | Choose between verbose mode (**v**) and silent (**s**) (default: v)|
 | `-i, --input_dir`               | Select directory for input files (default: "./input/")                |
-| `-i, --input_dir`               | Select directory for input files (default: "./input/") |
+| `-o, --output_dir`               | Select directory for output results (default: "./res/") |
 
 Example:
 
