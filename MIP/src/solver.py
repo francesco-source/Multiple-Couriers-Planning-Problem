@@ -143,10 +143,12 @@ class MIPsolver:
             time = np.round(t.time() - start_time,2)
             
             
-            if time < self.timeout:
+            if time < self.timeout - 10:
                 optimal = True
+                time = int(self.solver.solutionTime)
             else:
                 optimal = False
+                time = self.timeout
             
             
             
@@ -206,7 +208,7 @@ class MIPsolver:
             
             result = [[x + 1 for x in sublist if x != n] for sublist in result]
             
-            return int(self.solver.solutionTime) , optimal, obj, result
+            return time , optimal, obj, result
         
         except ElementNotFoundException as e:
             return int(self.timeout), False, None , []
@@ -247,6 +249,10 @@ class MIPsolver:
         distance_ub = instance.courier_dist_ub
 
         rho_lb = instance.rho_low_bound
+        
+        courier_low_bound = instance.courier_min_load
+        
+        courier_up_bound = instance.courier_max_load
 
         #  it's set to 1 if the arc from node i  to node j is in the optimal route and is driven by vehicle k
         X = [[[ LpVariable(name=f'X_{i}_{j}_{k}', lowBound=0, upBound=1, cat=LpBinary) 
@@ -254,14 +260,14 @@ class MIPsolver:
         
         # Load carried by each courier
         load_courier = [LpVariable(name=f'load_cour_{i}', cat=LpInteger ,
-                                    lowBound = np.min(s), upBound=np.sum(s)) for i in range(m)]
+                                    lowBound = courier_low_bound, upBound = courier_up_bound) for i in range(m)]
 
         # Distance travelled by each courier
         dist_courier = [LpVariable(name=f'dist_cour_{i}', cat=LpInteger ,
-                                    lowBound = distance_lb, upBound=distance_ub) for i in range(m)]
+                                    lowBound = distance_lb, upBound = distance_ub) for i in range(m)]
         
         rho = LpVariable(name=f'rho', 
-                             lowBound = rho_lb, upBound =distance_ub , cat = distance_ub)
+                             lowBound = rho_lb, upBound = distance_ub , cat = distance_ub)
         
         
         #1. vehicle leaves node that it enters
@@ -290,7 +296,7 @@ class MIPsolver:
             for k in range(m):
                 for j in range(n):
                     for i in range(n):
-                         self.solver += X[i][j][k]*(n-1) + Y[k][j] - Y[k][i]  <= n-2
+                         self.solver += X[i][j][k]*(n-1) + Y[k][i] - Y[k][j]  <= n-2
                      
         elif strategy_sub_t == "_mtz":
             Y = [[LpVariable(name = f"Order_{k}_{i}",lowBound = 0, upBound = n-1) 

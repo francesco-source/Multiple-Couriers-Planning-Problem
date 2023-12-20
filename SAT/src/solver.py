@@ -86,7 +86,7 @@ class SATsolver:
         """
         rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()
-        maxDistBin= int(np.ceil(np.log2(n * np.max(D))))
+        maxDistBin= int(np.ceil(np.log2(instance.courier_dist_ub)))
         
         start_time = t.time()        
         iter = 0
@@ -178,8 +178,8 @@ class SATsolver:
         """
         rho, X, D_tot, _ = variables
         m,n,_,_,D = instance.unpack()
-        maxDistBin= int(np.ceil(np.log2(n * np.max(D))))
-        maxDist = n * np.max(D)
+        maxDistBin= int(np.ceil(np.log2(instance.courier_dist_ub)))
+        maxDist = instance.courier_dist_ub
         
         UPPER_BOUND = maxDist
         LOWER_BOUND = np.max(D[-1] + D[:,-1])
@@ -288,23 +288,23 @@ class SATsolver:
         """
         m, n, s, l, D = instance.unpack()
 
-        maxs = np.max(instance.s)
-        maxl = np.max(instance.l)
         maxD = np.max(instance.D)
+        #mins = instance.courier_min_load
         maxDBin = int(np.ceil(np.log2(maxD)))
-        maxDist = n * maxD
+        maxDist = instance.courier_dist_ub
         maxDistBin = int(np.ceil(np.log2(maxDist)))
-        maxWeight = np.sum(instance.s)
+        maxWeight = instance.courier_max_load
         maxWeightBin = int(np.ceil(np.log2(maxWeight)))
         maxDBin = maxDistBin
-
+        
         X = [[[Bool(f"x_{i}_{j}_{k}") for k in range(0,n+1)] for j in range(n)] for i in range(m)]
 
         # binary-encodes the input variables
-        l = [[BoolVal(b) for b in toBinary(l[i], length= maxWeightBin)] for i in range(m)]
-        s = [[BoolVal(b) for b in toBinary(s[j], length= maxWeightBin)] for j in range(n)]
-        D = [[[BoolVal(b) for b in toBinary(D[i][j], length= maxDBin)] for j in range(n+1)] for i in range(n+1)]
-
+        l = [[BoolVal(b) for b in toBinary(l[i], length = maxWeightBin)] for i in range(m)]
+        s = [[BoolVal(b) for b in toBinary(s[j], length = maxWeightBin)] for j in range(n)]
+        D = [[[BoolVal(b) for b in toBinary(D[i][j], length = maxDBin)] for j in range(n+1)] for i in range(n+1)]
+        #mins = [BoolVal(b) for b in toBinary(mins,length = maxWeightBin)]
+        
         # each cell has only one value.
         for i in range(m):
             for j in range(n):
@@ -336,6 +336,7 @@ class SATsolver:
             self.solver.add(sum_vec(W_par[i], W_tot[i], name= f"weight_{i}"))
             # 3. for each courier the sum must be less than or equal to the max load size
             self.solver.add(lesseq(W_tot[i], l[i]))
+            #self.solver.add(lesseq(mins,W_tot[i]))
 
         D_par = [[[Bool(f"partial_distances_{i}_{j}_{b}") for b in range(maxDBin)] for j in range(n+1)] for i in range(m)]
         D_tot = [[ Bool(f"total_distances_{i}_{b}") for b in range(maxDistBin)] for i in range(m)]
@@ -365,7 +366,7 @@ class SATsolver:
             self.solver.add(Implies(X[i][-1][0], equals(D_par[i][-1], D[n][n]))) # se il corriere non porta pacchi nell'istante j allora copia 0 nelle distanze
         
             # 2. compute the sum of the distances for each courier
-            self.solver.add(sum_vec(D_par[i], D_tot[i], name= f"dist_{i}"))
+            self.solver.add(sum_vec(D_par[i], D_tot[i], name = f"dist_{i}"))
 
         if strategy == LINEAR_SEARCH:
             for i in range(m):

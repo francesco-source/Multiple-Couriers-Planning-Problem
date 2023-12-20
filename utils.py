@@ -39,6 +39,7 @@ class Instance:
     value1 = last_column[np.argmin(last_row)] + min(last_row)
     value2 = last_row[np.argmin(last_column)] + min(last_column)
     d_low_bound = min(value1, value2)
+    
     return d_low_bound
   
   def set_d_up_bound(self):
@@ -47,7 +48,7 @@ class Instance:
         It is the distance of the path [1,2,...,n] (a courier brings all items at once)
     """
     _, n, _, _, D = self.unpack()
-              # dep->0    i->i+1 from 0 to n-1              n-1->dep
+              # dep->0    i->i+1 from 0 to n-1                n-1->dep
     up_bound = D[n,0] + np.sum(D[0: n-1, 1: n].diagonal()) + D[n-1, n]    
     return up_bound
 
