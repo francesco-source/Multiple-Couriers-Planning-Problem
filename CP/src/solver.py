@@ -2,7 +2,7 @@ import minizinc as mzn
 from constants import *
 import datetime as t
 from utils import *
-import time as tempo
+import time  as tm
 
 class CPsolver:
     def __init__(self, data, output_dir, timeout=300, mode = 'v'):
@@ -12,7 +12,7 @@ class CPsolver:
         self.solver = None
         self.mode = mode
         self.solver_path = "./CP/src/"
-        self.total_time = tempo.time()
+        self.total_time = tm.time()
 
 
     def solve(self):
@@ -33,9 +33,10 @@ class CPsolver:
                         try:
                             
                             mzn_instance = mzn.Instance(self.solver, model)
-                            start_time = tempo.time()
+                            start_time = tm.time()
+                            
                             result = self.search(mcp_instance, mzn_instance,solver_const)
-                            end_time = tempo.time()
+                            end_time = tm.time()
                             
                             self.total_time = end_time - start_time 
                             
@@ -117,7 +118,6 @@ class CPsolver:
         mzn_instance["sym"] = int(np.array_equal(D, D.T))
         mzn_instance["up_bound"] = mcp_instance.courier_dist_ub
         mzn_instance["low_bound"] = mcp_instance.rho_low_bound
-        
         if solver_const == CHUFFED:
             return mzn_instance.solve(timeout=t.timedelta(seconds=self.timeout), \
                                    random_seed=42)

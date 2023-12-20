@@ -41,8 +41,8 @@ constraint predecessor[items + 1] = items + 2 * couriers;
 constraint forall(i in NODES) ((successor[predecessor[i]] == i) /\ (predecessor[successor[i]] == i));
 
 % all start
-constraint forall(i in START_NODES)(successor[i] != successor[i+couriers]);
-constraint forall(i in END_NODES)(predecessor[i] != predecessor[i-couriers]);
+constraint forall(i in START_NODES)(successor[i] != i + couriers);
+constraint forall(i in END_NODES)(predecessor[i] != i - couriers);
 
 % enforce
 constraint forall(i in START_NODES)(courier_route[i] = i - items);

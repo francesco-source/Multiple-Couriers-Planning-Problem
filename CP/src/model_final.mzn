@@ -41,8 +41,8 @@ constraint predecessor[items + 1] = items + 2 * couriers;
 constraint forall(i in NODES) ((successor[predecessor[i]] == i) /\ (predecessor[successor[i]] == i));
 
 % all start
-constraint forall(i in START_NODES)(successor[i] != successor[i+couriers]);
-constraint forall(i in END_NODES)(predecessor[i] != predecessor[i-couriers]);
+constraint forall(i in START_NODES)(successor[i] != i + couriers);
+constraint forall(i in END_NODES)(predecessor[i] != i - couriers);
 
 % enforce
 constraint forall(i in START_NODES)(courier_route[i] = i - items);
@@ -51,6 +51,7 @@ constraint forall(i in ITEMS)      (courier_route[successor[i]] = courier_route[
 constraint forall(i in ITEMS)      (courier_route[predecessor[i]] = courier_route[i]);
 
 constraint bin_packing_capa(courier_capacity,[courier_route[i] | i in ITEMS],item_size);
+
 
 % calculate distance incrementally
 constraint forall(i in START_NODES)(incremental_dist[i] = 0);

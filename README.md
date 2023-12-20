@@ -30,12 +30,12 @@ Run with python the ```main.py``` file with the following optional arguments:
 | `-t, --timeout` | Sets the timeout (s, default: 300)                                       |
 | `-m, --mode`                | Choose between verbose mode (**v**) and silent (**s**) (default: v)|
 | `-i, --input_dir`               | Select directory for input files (default: "./input/")                |
-| `-o, --output_dir`               | Select directory for output results (default: "./res/") |
+| `-o, --output_dir`               | Select directory for output files (default: "./res/") |
 
 Example:
 
-<code> python3 main.py -a sat -n 1 -m s</code><br>
-Solve instance 1 with sat solver without fully printing the solution (silent mode).
+<code> python3 main.py -a sat -n 1 -m v</code><br>
+Solve instance 1 with sat solver without fully printing the solution (verbose mode).
 
 **Note**:<br>
 The cp model is able to solve all the instances. Regarding the others, they can encode the model only on the first 10 instances (with an exception for MIP, that can do also 13 and 16).
